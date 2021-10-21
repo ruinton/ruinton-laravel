@@ -1,0 +1,61 @@
+{
+    "name": "ruinton/ruinton-php",
+    "description": "Ruinton php backend components",
+    "keywords": [
+        "ruinton",
+        "php",
+        "laravel",
+        "symfony",
+        "swoole"
+    ],
+    "homepage": "https://github.com/ruinton/ruinton-php",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Mohammadrasul Alizadeh",
+            "email": "mohammadr.alizadeh@live.com",
+            "homepage": "https://github.com/ruinton/ruinton-php"
+        }
+    ],
+    "require": {
+        "php": "^7.4|^8.0",
+        "ext-json": "*",
+        "illuminate/database": "^6|^7|^8",
+        "illuminate/routing": "^6|^7|^8",
+        "illuminate/support": "^6|^7|^8",
+        "symfony/debug": "^4.3|^5",
+        "symfony/finder": "^4.3|^5"
+    },
+    "require-dev": {
+        "mockery/mockery": "^1.3.3",
+        "orchestra/testbench-dusk": "^4|^5|^6",
+        "phpunit/phpunit": "^8.5|^9.0",
+        "squizlabs/php_codesniffer": "^3.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "Ruinton\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Ruinton\\Tests\\": "tests"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit",
+        "format": "vendor/bin/php-cs-fixer fix --allow-risky=yes"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Ruinton\\RuintonServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

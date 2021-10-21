@@ -1,0 +1,50 @@
+{
+    "@context": "https:\/\/schema.org",
+    "url": "https:\/\/poulgilan.com\/",
+    "@type": "CollegeOrUniversity",
+    "name": "مجتمع آموزشی پل گیلان",
+    "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https:\/\/poulgilan.com\/search?keyword={search_term_string}",
+        "query-input": "required name=search_term_string"
+    },
+    "alternateName": "پل گیلان",
+    "logo": "https:\/\/poulgilan.com\/assets\/img\/POUL-logo-new.png",
+    "contactPoint": [
+        {
+            "@type": "ContactPoint",
+            "telephone": "01333333145",
+            "contactType": "customer service",
+            "areaServed": "IR",
+            "availableLanguage": "Persian"
+        },
+        {
+            "@type": "ContactPoint",
+            "telephone": "01333343030",
+            "contactType": "customer service",
+            "areaServed": "IR",
+            "availableLanguage": "Persian"
+        },
+        {
+            "@type": "ContactPoint",
+            "telephone": "01333343047",
+            "contactType": "customer service",
+            "areaServed": "IR",
+            "availableLanguage": "Persian"
+        },
+        {
+            "@type": "ContactPoint",
+            "telephone": "01333343048",
+            "contactType": "customer service",
+            "areaServed": "IR",
+            "availableLanguage": "Persian"
+        }
+    ],
+    "sameAs": [
+        "https:\/\/www.instagram.com\/poulgilan\/",
+        "https:\/\/www.youtube.com\/channel\/UCwQfNHUNsWvQnGTfxML-WAA\/feed",
+        "https:\/\/www.pinterest.com\/poulgilan\/",
+        "https:\/\/poulgilan.com\/",
+        "https:\/\/www.facebook.com\/PoulGilan\/"
+    ]
+}
