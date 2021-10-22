@@ -6,19 +6,16 @@ namespace Ruinton\Routing;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Ruinton\Service\ServiceInterface;
+use Ruinton\Service\ServiceResult;
 
-class RestApiController extends RuintonController
+class RestApiServiceController extends RuintonController
 {
-    /** @var CrudService */
-    protected $service;
+    protected ServiceInterface $service;
 
-    public function __construct(CrudService $service, ResultBuilder $result = null)
+    public function __construct(ServiceInterface $service)
     {
         $this->service = $service;
-        if($result === null) {
-            $result = new ResultBuilder($this->service->getTableName());
-        }
-        parent::__construct($result);
     }
 
     /**
@@ -29,17 +26,22 @@ class RestApiController extends RuintonController
      */
     public function index(Request $request, bool $pagination = true)
     {
-        $queryParam = $this->parseQueryParams($request);
         if($request->query('export', null) !== null) {
-            $queryParam->setPageSize(100000);
-            $queryParam->setPageIndex(1);
+            $queryParam = $this->getQueryParams($request);
+            $queryParam->setPageSize(10000);
+            $queryParam->setPageNumber(1);
             $result = $this->service->all($queryParam, $pagination);
             return $this->exportCsv($request, $result);
         }
-        return $this->indexAction($queryParam, $pagination);
+        return $this->indexAction($request, $pagination)->toJsonResponse();
     }
 
-    public function exportCsv(Request $request, ResultBuilder $result)
+    protected function indexAction(Request $request, bool $pagination = true) : ServiceResult
+    {
+        return $this->service->all($this->getQueryParams($request), $pagination);
+    }
+
+    protected function exportCsv(Request $request, ServiceResult $result)
     {
         $fileName = 'workshop-users.csv';
 
@@ -73,12 +75,6 @@ class RestApiController extends RuintonController
         return response()->stream($callback, 200, $headers);
     }
 
-    protected function indexAction(?QueryParam $queryParam = null, bool $pagination = true)
-    {
-        $result = $this->service->all($queryParam, $pagination);
-        return $this->response($result);
-    }
-
     /**
      * Store a newly created resource in storage.
      *
@@ -87,26 +83,17 @@ class RestApiController extends RuintonController
      */
     public function store(Request $request)
     {
-        if($request->has('institute_id'))
-        {
-            $data = array_merge($this->getJson($request), ['institute_id' => $request->institute_id]);
-        } else {
-            $data = $this->getJson($request);
-        }
-        return $this->storeAction($data);
-    }
-
-    protected function storeAction($data)
-    {
+        $data = $request->json();
         if(empty($data))
         {
-            $result = $this->result->status(504)->message('no data found in request');
+            return $this->generateResponse(504, 'no data found in request')->toJsonResponse();
         }
-        else
-        {
-            $result = $this->service->create($data);
-        }
-        return $this->response($result);
+        return $this->storeAction($request, $data)->toJsonResponse();
+    }
+
+    protected function storeAction(Request $request, $data) : ServiceResult
+    {
+        return $this->service->create($data);
     }
 
     /**
@@ -115,15 +102,14 @@ class RestApiController extends RuintonController
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function show($id)
+    public function show(Request $request, $id)
     {
-        return $this->showAction($id);
+        return $this->showAction($request, $id)->toJsonResponse();
     }
 
-    protected function showAction($id)
+    protected function showAction(Request $request, $id) : ServiceResult
     {
-        $result = $this->service->find($id);
-        return $this->response($result);
+        return $this->service->find($id, $this->getQueryParams($request));
     }
 
     /**
@@ -135,28 +121,21 @@ class RestApiController extends RuintonController
      */
     public function update(Request $request, $id)
     {
-        $data = $this->getJson($request);
-        return $this->updateAction($data, $id);
-    }
-
-    protected function updateAction($data, $id)
-    {
+        $data = $request->json();
         if(intval($id) < 1)
         {
-            $result = $this->result->status(402)->message('selected id is not in range');
+            return $this->generateResponse(402, 'selected id is not in range')->toJsonResponse();
         }
-        else
+        if(empty($data))
         {
-            if(empty($data))
-            {
-                $result = $this->result->status(504)->message('no data found in request');
-            }
-            else
-            {
-                $result = $this->service->update(intval($id), $data);
-            }
+            return $this->generateResponse(504, 'no data found in request')->toJsonResponse();
         }
-        return $this->response($result);
+        return $this->updateAction($request, $id, $data)->toJsonResponse();
+    }
+
+    protected function updateAction(Request $request, $id, $data) : ServiceResult
+    {
+        return $this->service->update(intval($id), $data);
     }
 
     /**
@@ -165,22 +144,18 @@ class RestApiController extends RuintonController
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function destroy($id)
-    {
-        return $this->destroyAction($id);
-    }
-
-    protected function destroyAction($id)
+    public function destroy(Request $request, $id)
     {
         if(intval($id) < 1)
         {
-            $result = $this->result->status(402)->message('selected id is not in range');
+            return $this->generateResponse(402, 'selected id is not in range')->toJsonResponse();
         }
-        else
-        {
-            $result = $this->service->delete(intval($id));
-        }
-        return $this->response($result);
+        return $this->destroyAction($request, $id)->toJsonResponse();
+    }
+
+    protected function destroyAction(Request $request, $id) : ServiceResult
+    {
+        return $this->service->delete(intval($id));
     }
 
     /**
@@ -191,14 +166,17 @@ class RestApiController extends RuintonController
      */
     public function bulkUpdate(Request $request)
     {
-        $data = $this->getJson($request);
-        return $this->bulkUpdateAction($data);
+        $data = $request->json();
+        if(empty($data))
+        {
+            return $this->generateResponse(504, 'no data found in request')->toJsonResponse();
+        }
+        return $this->bulkUpdateAction($request, $data)->toJsonResponse();
     }
 
-    protected function bulkUpdateAction($data)
+    protected function bulkUpdateAction(Request $request, $data) : ServiceResult
     {
-        $result = $this->service->bulkUpdate($data);
-        return $this->response($result);
+        return $this->service->bulkUpdate($data);
     }
 
     /**
@@ -209,14 +187,17 @@ class RestApiController extends RuintonController
      */
     public function bulkUpdateOrInsert(Request $request)
     {
-        $data = $this->getJson($request);
-        return $this->bulkUpdateOrInsertAction($data);
+        $data = $request->json();
+        if(empty($data))
+        {
+            return $this->generateResponse(504, 'no data found in request')->toJsonResponse();
+        }
+        return $this->bulkUpdateOrInsertAction($request, $data)->toJsonResponse();
     }
 
-    protected function bulkUpdateOrInsertAction($data)
+    protected function bulkUpdateOrInsertAction(Request $request, $data) : ServiceResult
     {
-        $result = $this->service->bulkUpdateOrInsert($data);
-        return $this->response($result);
+        return $this->service->bulkUpdateOrInsert($data);
     }
 
     /**
@@ -227,14 +208,17 @@ class RestApiController extends RuintonController
      */
     public function bulkDelete(Request $request)
     {
-        $data = $this->getJson($request);
-        return $this->bulkDeleteAction($data);
+        $data = $request->json();
+        if(empty($data))
+        {
+            return $this->generateResponse(504, 'no data found in request')->toJsonResponse();
+        }
+        return $this->bulkDeleteAction($request, $data)->toJsonResponse();
     }
 
-    protected function bulkDeleteAction($data)
+    protected function bulkDeleteAction(Request $request, $data) : ServiceResult
     {
-        $result = $this->service->bulkDelete($data);
-        return $this->response($result);
+        return $this->service->bulkDelete($data);
     }
 
     /**

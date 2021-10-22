@@ -10,7 +10,7 @@ use Illuminate\Support\Str;
 use Ruinton\Parser\QueryParam;
 use Ruinton\Traits\DefaultEventListener;
 
-abstract class RestApiService implements ServiceInterface
+class RestApiModelService implements ServiceInterface
 {
     use DefaultEventListener;
 

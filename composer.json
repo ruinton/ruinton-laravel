@@ -1,5 +1,5 @@
 {
-    "name": "ruinton/ruinton-php",
+    "name": "ruinton/ruinton-laravel",
     "description": "Ruinton php backend components",
     "keywords": [
         "ruinton",
@@ -8,13 +8,13 @@
         "symfony",
         "swoole"
     ],
-    "homepage": "https://github.com/ruinton/ruinton-php",
+    "homepage": "https://github.com/ruinton/ruinton-laravel",
     "license": "MIT",
     "authors": [
         {
             "name": "Mohammadrasul Alizadeh",
             "email": "mohammadr.alizadeh@live.com",
-            "homepage": "https://github.com/ruinton/ruinton-php"
+            "homepage": "https://github.com/ruinton/ruinton-laravel"
         }
     ],
     "require": {

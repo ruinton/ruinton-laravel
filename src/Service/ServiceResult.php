@@ -4,6 +4,7 @@
 namespace Ruinton\Service;
 
 
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Str;
 
 class ServiceResult
@@ -116,6 +117,10 @@ class ServiceResult
         }
 //        $this->reset();
         return $result;
+    }
+
+    public function toJsonResponse() : JsonResponse {
+        return response()->json($this->toArray());
     }
 
     public function reset()

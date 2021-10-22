@@ -17,8 +17,6 @@ interface ServiceInterface
 
     public function delete($id, ?QueryParam $queryParam = null) : ServiceResult;
 
-    public function forceDelete($id, ?QueryParam $queryParam = null) : ServiceResult;
-
     public function bulkUpdate(array $data) : ServiceResult;
 
     public function bulkUpdateOrInsert(array $data) : ServiceResult;
