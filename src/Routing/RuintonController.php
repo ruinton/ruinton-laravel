@@ -17,9 +17,17 @@ class RuintonController extends Controller
 //        return response()->json($resultBuilder->build(), $resultBuilder->getStatus());
 //    }
 
-    protected function generateResponse(int $status, string $message) : ServiceResult {
+    protected function getJsonRequest(Request $request)
+    {
+        return json_decode($request->getContent(), true);
+    }
+
+    protected function generateResponse(int $status, string $message, ?string $error = null) : ServiceResult {
         $response = new ServiceResult(self::class);
         $response->status($status)->message($message);
+        if($error) {
+            $response->error($error, 'ruinton');
+        }
         return $response;
     }
 

@@ -40,7 +40,6 @@ final class FilterOperators
 
     public static function getOperatorByFilterName($name) {
         try{
-            dump($name);
             return self::FilterNames[$name];
         }catch (\Exception $e) {
             return self::LIKE;

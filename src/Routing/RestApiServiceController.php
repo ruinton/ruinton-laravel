@@ -38,7 +38,8 @@ class RestApiServiceController extends RuintonController
 
     protected function indexAction(Request $request, bool $pagination = true) : ServiceResult
     {
-        return $this->service->all($this->getQueryParams($request), $pagination);
+        $params = $this->getQueryParams($request);
+        return $this->service->all($params, $pagination);
     }
 
     protected function exportCsv(Request $request, ServiceResult $result)
@@ -83,10 +84,10 @@ class RestApiServiceController extends RuintonController
      */
     public function store(Request $request)
     {
-        $data = $request->json();
+        $data = $this->getJsonRequest($request);
         if(empty($data))
         {
-            return $this->generateResponse(504, 'no data found in request')->toJsonResponse();
+            return $this->generateResponse(504, 'Input error', 'no data found in request')->toJsonResponse();
         }
         return $this->storeAction($request, $data)->toJsonResponse();
     }
@@ -121,14 +122,14 @@ class RestApiServiceController extends RuintonController
      */
     public function update(Request $request, $id)
     {
-        $data = $request->json();
+        $data = $this->getJsonRequest($request);
         if(intval($id) < 1)
         {
-            return $this->generateResponse(402, 'selected id is not in range')->toJsonResponse();
+            return $this->generateResponse(402, 'Input error', 'selected id is not in range')->toJsonResponse();
         }
         if(empty($data))
         {
-            return $this->generateResponse(504, 'no data found in request')->toJsonResponse();
+            return $this->generateResponse(504, 'Input error', 'no data found in request')->toJsonResponse();
         }
         return $this->updateAction($request, $id, $data)->toJsonResponse();
     }
@@ -148,7 +149,7 @@ class RestApiServiceController extends RuintonController
     {
         if(intval($id) < 1)
         {
-            return $this->generateResponse(402, 'selected id is not in range')->toJsonResponse();
+            return $this->generateResponse(402, 'Input error', 'selected id is not in range')->toJsonResponse();
         }
         return $this->destroyAction($request, $id)->toJsonResponse();
     }
@@ -166,10 +167,10 @@ class RestApiServiceController extends RuintonController
      */
     public function bulkUpdate(Request $request)
     {
-        $data = $request->json();
+        $data = $this->getJsonRequest($request);
         if(empty($data))
         {
-            return $this->generateResponse(504, 'no data found in request')->toJsonResponse();
+            return $this->generateResponse(504, 'Input error', 'no data found in request')->toJsonResponse();
         }
         return $this->bulkUpdateAction($request, $data)->toJsonResponse();
     }
@@ -187,10 +188,10 @@ class RestApiServiceController extends RuintonController
      */
     public function bulkUpdateOrInsert(Request $request)
     {
-        $data = $request->json();
+        $data = $this->getJsonRequest($request);
         if(empty($data))
         {
-            return $this->generateResponse(504, 'no data found in request')->toJsonResponse();
+            return $this->generateResponse(504, 'Input error', 'no data found in request')->toJsonResponse();
         }
         return $this->bulkUpdateOrInsertAction($request, $data)->toJsonResponse();
     }
@@ -208,10 +209,10 @@ class RestApiServiceController extends RuintonController
      */
     public function bulkDelete(Request $request)
     {
-        $data = $request->json();
+        $data = $this->getJsonRequest($request);
         if(empty($data))
         {
-            return $this->generateResponse(504, 'no data found in request')->toJsonResponse();
+            return $this->generateResponse(504, 'Input error', 'no data found in request')->toJsonResponse();
         }
         return $this->bulkDeleteAction($request, $data)->toJsonResponse();
     }

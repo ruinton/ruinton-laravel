@@ -11,6 +11,7 @@ class QueryParser
     public static function Parse(Request $request) : QueryParam {
         $queryParam = new QueryParam();
         if($request->has('page')) {
+            $page = $request->query('page');
             if(isset($page['number']))
             {
                 $queryParam->setPageNumber(intval($page['number']));

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Ruinton\Enums\FilterOperators;
 use Ruinton\Parser\QueryParam;
 use Ruinton\Traits\DefaultEventListener;
 
@@ -291,8 +292,8 @@ class RestApiModelService implements ServiceInterface
     protected function applyParamsOnQuery(Builder $query, ?QueryParam $params) {
         if($params) {
             foreach ($params->getFilterFields() as $key => $filter) {
-                if(is_callable($filter)) {
-                    $query->where($filter);
+                if(is_callable($filter[0]) && strcmp($filter[1], FilterOperators::CLOSURE) === 0) {
+                    $query->where($filter[0]);
                 }
                 else if(Str::contains($key, '.'))
                 {

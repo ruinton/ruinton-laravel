@@ -99,7 +99,7 @@ class QueryParam
 
     public function hasSort(): bool
     {
-        return count($this->sort) > 0;
+        return count($this->sort ?? []) > 0;
     }
 
     public function hasFilter($filterKey): bool
@@ -223,7 +223,7 @@ class QueryParam
      */
     public function getFilterFields(): array
     {
-        return $this->filter;
+        return $this->filter ?? [];
     }
 
     /**
@@ -276,7 +276,7 @@ class QueryParam
      */
     public function getJoins(): array
     {
-        return $this->joins;
+        return $this->joins ?? [];
     }
 
     /**
