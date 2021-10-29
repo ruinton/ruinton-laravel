@@ -3,6 +3,7 @@
 
 namespace Ruinton\Service;
 
+use Ruinton\Enums\MediaTypes;
 use Ruinton\Parser\QueryParam;
 
 interface ServiceInterface
@@ -22,4 +23,8 @@ interface ServiceInterface
     public function bulkUpdateOrInsert(array $data) : ServiceResult;
 
     public function bulkDelete(array $data) : ServiceResult;
+
+    public function createMedia(array $files) : ServiceResult;
+
+    public function deleteMedia(int $id = 0) : ServiceResult;
 }

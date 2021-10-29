@@ -3,11 +3,14 @@
 
 namespace Ruinton\Service;
 
+use http\Env\Request;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Ruinton\Enums\FilterOperators;
+use Ruinton\Enums\MediaTypes;
 use Ruinton\Parser\QueryParam;
 use Ruinton\Traits\DefaultEventListener;
 
@@ -20,6 +23,14 @@ class RestApiModelService implements ServiceInterface
     public function __construct(Model $model)
     {
         $this->model = $model;
+    }
+
+    public function getOrCreateParams(?QueryParam $params) {
+        if($params) {
+            return $params;
+        }else {
+            return new QueryParam();
+        }
     }
 
     public function getModelName() : string
@@ -105,6 +116,7 @@ class RestApiModelService implements ServiceInterface
 //            $newModel->created_at = Carbon::now()->formatDatetime();
             if($newModel->save())
             {
+                $this->linkMediaFields($data, $newModel);
                 $this->afterCreate($newModel, $queryParam);
                 $serviceResult->status(200)->message(class_basename($this->model).' created successfully');
                 if($queryParam != null)
@@ -146,6 +158,7 @@ class RestApiModelService implements ServiceInterface
             if($updateModel)
             {
                 $updateModel->fill($data);
+                $this->linkMediaFields($data, $updateModel);
                 $this->beforeUpdate($updateModel, $queryParam);
 //                $updateModel->updated_at = Carbon::now()->formatDatetime();
                 if($updateModel->save())
@@ -340,5 +353,81 @@ class RestApiModelService implements ServiceInterface
             }
             $query->select($params->getColumns());
         }
+    }
+
+    public function getMediaRules() {
+        return [
+            'cover' => [
+                'type' => MediaTypes::PRODUCT_IMAGE
+            ]
+        ];
+    }
+
+    public function linkMediaFields(array $data, Model $model) {
+        if($this->model->media() === null) return;
+        foreach ($data as $media) {
+            if(!$this->isMedia($media)) continue;
+            /** @var MediaService $mediaService */
+            $mediaService = App::make(MediaService::class);
+            $mediaList = [];
+            if(isset($media[0])) {
+                $mediaList = $media;
+            }else {
+                $mediaList = [$media];
+            }
+            $mediaIds = [];
+            foreach ($mediaList as $mediaItem) {
+                array_push($mediaIds, $mediaItem['id']);
+            }
+            $mediaService->linkMedia($model, $mediaIds);
+        }
+    }
+
+    public function isMedia($data) {
+        if(!is_array($data)) return false;
+        return true;
+    }
+
+    public function createMedia(array $files) : ServiceResult
+    {
+        /** @var MediaService $mediaService */
+        $mediaService = App::make(MediaService::class);
+        $serviceResult = new ServiceResult($this->model->getTable());
+        $mediaRules = $this->getMediaRules();
+        foreach ($files as $key => $file)
+        {
+            $fieldKey = $key;
+            if(str_contains($key, '-')) {
+                $fieldKey = explode('-', $key)[0];
+            }
+            if(!in_array($fieldKey, array_keys($mediaRules))) continue;
+            if(isset($mediaRules[$fieldKey]['restrictMimeType'])) {
+                if (!in_array($file->getMimeType(), array_keys($mediaRules[$fieldKey]['restrictMimeType']))) continue;
+            }
+            $media = $mediaService->createMedia($file, $mediaRules[$fieldKey]['type'],
+                $this->model);
+            $serviceResult->appendData($media, $fieldKey);
+        }
+
+        $serviceResult->status(200)->message('Media uploaded')->data($serviceResult->getData(),
+            Str::snake(class_basename($this->model)));;
+        return $serviceResult;
+    }
+
+
+    public function deleteMedia(int $id = 0) : ServiceResult
+    {
+        /** @var MediaService $mediaService */
+        $mediaService = App::make(MediaService::class);
+        $serviceResult = new ServiceResult($this->model->getTable());
+        try {
+            $model = $mediaService->deleteMedia($id, $this->model);
+            $serviceResult->status(200)->message('Media deleted')->data($model, $this->model->getTable());
+        }
+        catch (\Exception $e)
+        {
+            $serviceResult->status(402)->message('unknown error')->error($e->getMessage(), 'service');
+        }
+        return $serviceResult;
     }
 }

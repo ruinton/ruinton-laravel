@@ -49,7 +49,15 @@ class ServiceResult
         if($this->data === null) {
             $this->data($data, $container);
         }else {
-            $this->data[$container] = $data;
+            if(isset($this->data[$container])) {
+                if(is_array($this->data[$container])) {
+                    array_push($this->data[$container], $data);
+                } else {
+                    $this->data[$container] = [$this->data[$container], $data];
+                }
+            } else {
+                $this->data[$container] = $data;
+            }
         }
         return $this;
     }

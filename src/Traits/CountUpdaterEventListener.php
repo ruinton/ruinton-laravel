@@ -1,11 +1,11 @@
 <?php
 
 
-namespace App\Classes\Traits;
+namespace Ruinton\Traits;
 
-use App\Classes\QueryParam;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use Ruinton\Parser\QueryParam;
 
 trait CountUpdaterEventListener
 {

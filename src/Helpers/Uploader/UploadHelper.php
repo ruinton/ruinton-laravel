@@ -1,7 +1,7 @@
 <?php
-namespace App\Classes\Helpers\Uploader;
+namespace Ruinton\Helpers\Uploader;
 
-use App\Classes\Enums\MimeTypes;
+use Ruinton\Enums\MimeTypes;
 
 class UploadHelper{
 

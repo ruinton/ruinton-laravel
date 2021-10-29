@@ -1,13 +1,12 @@
 <?php
 
 
-namespace App\Classes\Traits;
+namespace Ruinton\Traits;
 
 
-use App\Classes\QueryParam;
 use Carbon\Carbon;
-use Hekmatinasser\Verta\Verta;
 use Illuminate\Database\Eloquent\Model;
+use Ruinton\Parser\QueryParam;
 
 trait UpdatedAtUpdaterEventListener
 {

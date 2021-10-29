@@ -1,7 +1,7 @@
 <?php
 
 
-namespace App\Classes\Traits;
+namespace Ruinton\Traits;
 use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 

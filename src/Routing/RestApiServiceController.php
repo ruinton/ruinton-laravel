@@ -222,109 +222,38 @@ class RestApiServiceController extends RuintonController
         return $this->service->bulkDelete($data);
     }
 
-    /**
-     * Update the specified resource media file in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function createMedia(Request $request, $id)
+    public function uploadMedia(Request $request)
     {
         $files = $request->allFiles();
-        return $this->createMediaAction($files, $id);
+        return $this->uploadMediaAction($request, $files);
     }
 
-    /**
-     * @param UploadedFile[] $files
-     * @param $id
-     * @return \Illuminate\Http\JsonResponse
-     */
-    protected function createMediaAction(array $files, $id)
+    protected function uploadMediaAction(Request $request, array $files)
+    {
+        if(empty($files))
+        {
+            return $this->generateResponse(504, 'Input error', 'no file found in request')->toJsonResponse();
+        }
+        else
+        {
+            return $this->service->createMedia($files)->toJsonResponse();
+        }
+    }
+
+    public function deleteMedia(Request $request, $id)
+    {
+        return $this->deleteMediaAction($request, $id);
+    }
+
+    protected function deleteMediaAction($request, $id)
     {
         if(intval($id) < 1)
         {
-            $result = $this->result->status(402)->message('selected id is not in range');
+            return $this->generateResponse(504, 'Input error', 'selected id is not in range')->toJsonResponse();
         }
         else
         {
-            if(empty($files))
-            {
-                $result = $this->result->status(402)->message('no file found in request');
-            }
-            else
-            {
-                $result = $this->service->createMedia(intval($id), $files);
-            }
+            return $this->service->deleteMedia(intval($id))->toJsonResponse();
         }
-        return $this->response($result);
-    }
-
-    /**
-     * Update the specified resource media file in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function updateMedia(Request $request, $id)
-    {
-        $files = $request->allFiles();
-        return $this->updateMediaAction($files, $id);
-    }
-
-    /**
-     * @param UploadedFile[] $files
-     * @param $id
-     * @return \Illuminate\Http\JsonResponse
-     */
-    protected function updateMediaAction(array $files, $id)
-    {
-        if(intval($id) < 1)
-        {
-            $result = $this->result->status(402)->message('selected id is not in range');
-        }
-        else
-        {
-            if(empty($files))
-            {
-                $result = $this->result->status(402)->message('no file found in request');
-            }
-            else
-            {
-                $result = $this->service->updateMedia(intval($id), $files);
-            }
-        }
-        return $this->response($result);
-    }
-
-    /**
-     * Destroy the specified resource media file in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function destroyMedia(Request $request, $rId, $id)
-    {
-        return $this->destroyMediaAction($rId, $id, MediaTypes::ANY);
-    }
-
-    /**
-     * @param $id
-     * @param int $mediaType
-     * @return \Illuminate\Http\JsonResponse
-     */
-    protected function destroyMediaAction($rId, $id, $mediaType = MediaTypes::ANY)
-    {
-        if(intval($rId) < 1)
-        {
-            $result = $this->result->status(402)->message('selected id is not in range');
-        }
-        else
-        {
-            $result = $this->service->deleteMedia(intval($rId), intval($id), $mediaType);
-        }
-        return $this->response($result);
     }
 }

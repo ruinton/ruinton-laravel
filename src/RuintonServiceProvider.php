@@ -3,6 +3,8 @@
 namespace Ruinton;
 
 use Illuminate\Support\ServiceProvider;
+use Ruinton\Commands\MakeController;
+use Ruinton\Commands\MakeService;
 use Ruinton\Middleware\QueryStringParserMiddleware;
 
 class RuintonServiceProvider extends ServiceProvider
@@ -30,5 +32,11 @@ class RuintonServiceProvider extends ServiceProvider
 //        View::composer('view', function () {
 //            //
 //        });
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                MakeService::class,
+                MakeController::class
+            ]);
+        }
     }
 }

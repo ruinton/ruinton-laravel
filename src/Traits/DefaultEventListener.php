@@ -3,7 +3,6 @@
 
 namespace Ruinton\Traits;
 
-
 use Ruinton\Parser\QueryParam;
 
 trait DefaultEventListener

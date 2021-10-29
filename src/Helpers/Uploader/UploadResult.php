@@ -6,7 +6,7 @@
  * Time: 8:59 AM
  */
 
-namespace App\Classes\Helpers\Uploader;
+namespace Ruinton\Helpers\Uploader;
 
 
 class UploadResult
