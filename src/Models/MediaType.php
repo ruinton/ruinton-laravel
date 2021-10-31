@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class MediaType extends Model
 {
+    protected $connection = 'landlord';
     public $timestamps = false;
     /**
      * @var array

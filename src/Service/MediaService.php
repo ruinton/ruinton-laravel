@@ -6,8 +6,11 @@ namespace Ruinton\Service;
 
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 use Ruinton\Enums\MimeTypeIndexes;
 use Ruinton\Enums\MimeTypes;
 use Ruinton\Helpers\Uploader\UploadHelper;
@@ -24,14 +27,13 @@ class MediaService
         $this->uploadHelper = $uploadHelper;
     }
 
-    public function createMedia(UploadedFile $file, $mediaType, Model $baseModel)
+    public function createMedia(UploadedFile $file, $mediaType, Model $baseModel, $tenant = 'base')
     {
         $modelName = strtolower($baseModel->getTable());
         $fileName = uniqid().'-'.$modelName.'.'.$file->extension();
-        $storage_dir = '/public/media/'.$modelName.'/temp/';
-        $dir = "app\\public\\media\\".$modelName."\\temp\\";
-        $path = storage_path($dir);
-        $url = url('/storage/media/'.$modelName.'/temp/'.$fileName);
+        $storage_dir = '/public/'.$tenant.'/media/'.$modelName.'/temp/';
+        $path = "app\\public\\$tenant\\media\\$modelName\\temp\\";
+        $url = '/storage/'.$tenant.'/media/'.$modelName.'/temp/'.$fileName;
 
         $mimeTypeReflection = new \ReflectionClass(MimeTypes::class);
         $mimeTypeList = $mimeTypeReflection->getConstants();
@@ -40,7 +42,7 @@ class MediaService
         }
         $result = Media::create([
             'media_type_id' => $mediaType,
-            'mime_type_id'  => MimeTypeIndexes::getIndexByName($file->getMimeType()),
+            'mime_type_id'  => MimeTypes::getIndexByName($file->getMimeType()),
             'name'          => $file->getClientOriginalName(),
             'size'          => $file->getSize(),
             'created_at'    => Carbon::now(),
@@ -52,14 +54,14 @@ class MediaService
         return $result;
     }
 
-    public function deleteMedia($id, Model $relationModel) : ServiceResult
+    public function deleteMedia($id, Model $relationModel)
     {
         $this->unlinkMedia($id, $relationModel);
         $media = Media::find($id);
         if($media->delete())
         {
             /** @var Media $media */
-            File::delete($media->path);
+            File::delete(storage_path($media->path));
             $this->updateStatistics($media->media_type_id, -1, -1 * $media->size);
         }
         return $media;
@@ -67,7 +69,7 @@ class MediaService
 
     public function linkMedia(Model $baseModel, $mediaIds)
     {
-        $result = $baseModel->media()->sync($mediaIds);
+        $result = $baseModel->media()->syncWithoutDetaching($mediaIds);
 //        $newModel = $relationModel->replicate();
 //        $newModel->fill([
 //            'media_id' => $mediaId,
@@ -76,10 +78,12 @@ class MediaService
 //        $result = $newModel->save();
         $mediaList = Media::query()->whereIn('id', $mediaIds)->get();
         foreach ($mediaList as $media) {
-            $newPath = str_replace('temp', $baseModel[$baseModel->getKeyName()], $media->path);
-            $directory = explode("temp", $media->path)[0] . $baseModel[$baseModel->getKeyName()];
-            File::makeDirectory($directory, 0755, true);
-            File::move($media->path, $newPath);
+            $newPath = storage_path(str_replace('temp', $baseModel[$baseModel->getKeyName()], $media->path));
+            $directory = storage_path(explode("temp", $media->path)[0] . $baseModel[$baseModel->getKeyName()]);
+            if(!File::isDirectory($directory)) {
+                File::makeDirectory($directory, 0755, true);
+            }
+            File::move(storage_path($media->path), $newPath);
             $media->url = str_replace('temp', $baseModel[$baseModel->getKeyName()], $media->url);
             $media->path = $newPath;
             $media->save();
@@ -95,11 +99,13 @@ class MediaService
         return $result;
     }
 
-    public function unlinkMedia($id, ?Model $relationModel)
+    public function unlinkMedia($id, ?Model $model)
     {
-        if($relationModel != null)
+        if($model != null)
         {
-            $relationModel->newQuery()->where('media_id', '=', $id)->delete();
+            DB::table(Str::singular($model->getTable()).'_media')
+                ->where('media_id', '=', $id)
+                ->delete();
         }
     }
 

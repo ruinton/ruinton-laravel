@@ -112,12 +112,12 @@ class RestApiModelService implements ServiceInterface
         {
             $newModel = $this->model->replicate();
             $newModel->fill($data);
-            $this->beforeCreate($newModel, $queryParam);
+            $this->beforeCreate($newModel, $queryParam, $data);
 //            $newModel->created_at = Carbon::now()->formatDatetime();
             if($newModel->save())
             {
                 $this->linkMediaFields($data, $newModel);
-                $this->afterCreate($newModel, $queryParam);
+                $this->afterCreate($newModel, $queryParam, $data);
                 $serviceResult->status(200)->message(class_basename($this->model).' created successfully');
                 if($queryParam != null)
                 {
@@ -159,11 +159,11 @@ class RestApiModelService implements ServiceInterface
             {
                 $updateModel->fill($data);
                 $this->linkMediaFields($data, $updateModel);
-                $this->beforeUpdate($updateModel, $queryParam);
+                $this->beforeUpdate($updateModel, $queryParam, $id, $data);
 //                $updateModel->updated_at = Carbon::now()->formatDatetime();
                 if($updateModel->save())
                 {
-                    $this->afterUpdate($updateModel, $queryParam);
+                    $this->afterUpdate($updateModel, $queryParam, $id, $data);
                     $serviceResult->status(200)->message(class_basename($this->model).' updated successfully')
                         ->data($updateModel,
                             Str::snake(class_basename($this->model)));
@@ -200,10 +200,10 @@ class RestApiModelService implements ServiceInterface
             $deleteModel = $query->first();
             if($deleteModel)
             {
-                $this->beforeDelete($deleteModel, $queryParam);
+                $this->beforeDelete($deleteModel, $queryParam, $id);
                 if($deleteModel->delete())
                 {
-                    $this->afterDelete($deleteModel, $queryParam);
+                    $this->afterDelete($deleteModel, $queryParam, $id);
                     $serviceResult->status(200)->message(class_basename($this->model).' deleted successfully')
                         ->data($deleteModel,
                             Str::snake(class_basename($this->model)));
@@ -313,7 +313,15 @@ class RestApiModelService implements ServiceInterface
                     $query->where($key, $filter[1], $filter[0]);
                 }
                 else{
-                    $query->where($this->model->getTable().'.'.$key, $filter[1], $filter[0]);
+                    if(strcmp($filter[1], FilterOperators::IS_NULL) === 0) {
+                        $query->whereNull($this->model->getTable().'.'.$key);
+                    }
+                    else if(strcmp($filter[1], FilterOperators::IS_NOT_NULL) === 0) {
+                        $query->whereNotNull($this->model->getTable().'.'.$key);
+                    }
+                    else {
+                        $query->where($this->model->getTable() . '.' . $key, $filter[1], $filter[0]);
+                    }
                 }
             }
             foreach ($params->getJoins() as $joinModel => $joinFields)
@@ -356,19 +364,15 @@ class RestApiModelService implements ServiceInterface
     }
 
     public function getMediaRules() {
-        return [
-            'cover' => [
-                'type' => MediaTypes::PRODUCT_IMAGE
-            ]
-        ];
+        return [];
     }
 
     public function linkMediaFields(array $data, Model $model) {
-        if($this->model->media() === null) return;
+        if(!isset($this->model['media'])) return;
+        /** @var MediaService $mediaService */
+        $mediaService = App::make(MediaService::class);
         foreach ($data as $media) {
             if(!$this->isMedia($media)) continue;
-            /** @var MediaService $mediaService */
-            $mediaService = App::make(MediaService::class);
             $mediaList = [];
             if(isset($media[0])) {
                 $mediaList = $media;
@@ -379,12 +383,15 @@ class RestApiModelService implements ServiceInterface
             foreach ($mediaList as $mediaItem) {
                 array_push($mediaIds, $mediaItem['id']);
             }
+            $result = new ServiceResult($this->model->getTable());
+//            return $result->status(404)->data($mediaIds, 'ids');
             $mediaService->linkMedia($model, $mediaIds);
         }
     }
 
     public function isMedia($data) {
         if(!is_array($data)) return false;
+        if(count($data) < 1) return false;
         return true;
     }
 
@@ -401,8 +408,12 @@ class RestApiModelService implements ServiceInterface
                 $fieldKey = explode('-', $key)[0];
             }
             if(!in_array($fieldKey, array_keys($mediaRules))) continue;
-            if(isset($mediaRules[$fieldKey]['restrictMimeType'])) {
-                if (!in_array($file->getMimeType(), array_keys($mediaRules[$fieldKey]['restrictMimeType']))) continue;
+            if(isset($mediaRules[$fieldKey]['mimeType'])) {
+                $mimeTypes = [$mediaRules[$fieldKey]['mimeType']];
+                if (is_array($mediaRules[$fieldKey]['mimeType'])) {
+                    $mimeTypes = $mediaRules[$fieldKey]['mimeType'];
+                }
+                if (!in_array($file->getMimeType(), $mimeTypes)) continue;
             }
             $media = $mediaService->createMedia($file, $mediaRules[$fieldKey]['type'],
                 $this->model);

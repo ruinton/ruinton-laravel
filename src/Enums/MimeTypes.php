@@ -15,6 +15,7 @@ final class MimeTypes
     public const IMAGE_PNG              = "image/png";
     public const IMAGE_X_PNG            = "image/x-png";
     public const IMAGE_GIF              = "image/gif";
+    public const IMAGE_SVG              = "image/svg+xml";
 
     public const AUDIO_ALL              = "audio/*";
     public const AUDIO_MPEG             = "audio/mpeg";
@@ -41,4 +42,14 @@ final class MimeTypes
     public const APPLICATION_POWERPOINTX= "application/vnd.openxmlformats-officedocument.presentationml.presentation";
     public const APPLICATION_ACCESSX    = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
+    public final static function getIndexByName(string $mimeName)
+    {
+        $mimeClass = new \ReflectionClass(MimeTypes::class);
+        $index = array_search($mimeName, array_values($mimeClass->getConstants()));
+        if($index === false)
+        {
+            return null;
+        }
+        return $index + 1;
+    }
 }

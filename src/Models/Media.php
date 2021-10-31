@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Media extends Model
 {
+    protected $connection = 'tenant';
     public $timestamps = false;
     /**
      * The "type" of the auto-incrementing ID.
@@ -31,8 +32,11 @@ class Media extends Model
      */
     protected $fillable = ['media_type_id', 'mime_type_id', 'name', 'url', 'path', 'size', 'status', 'created_at'];
 
-    protected $hidden = ['media_type_id', 'mime_type_id', 'path', 'status', 'created_at'];
+    protected $hidden = ['media_type_id', 'mime_type_id', 'path', 'status', 'created_at', 'updated_at'];
 
+    public function getUrlAttribute($value) {
+        return url($value);
+    }
 
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
