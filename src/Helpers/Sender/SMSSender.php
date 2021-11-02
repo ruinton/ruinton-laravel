@@ -1,7 +1,7 @@
 <?php
 
 
-namespace App\Classes\Helpers\Sender;
+namespace Ruinton\Helpers\Sender;
 
 
 class SMSSender

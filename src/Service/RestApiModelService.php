@@ -48,15 +48,16 @@ class RestApiModelService implements ServiceInterface
         $serviceResult = new ServiceResult($this->model->getTable());
         $baseQuery = $this->model->newQuery();
         $this->applyParamsOnQuery($baseQuery, $queryParam);
+        $serviceResult->appendData($baseQuery->toSql(), 'sql');
         if($pagination)
         {
             $result = $baseQuery->paginate(
                 $queryParam->getPageSize(),
-                $queryParam->getVisible(),
+                $queryParam->getColumns(),
                 'page',
                 $queryParam->getPageNumber()
             );
-            $serviceResult->data($result->items(), $this->model->getTable())
+            $serviceResult->appendData($result->items(), $this->model->getTable())
                 ->meta([
                     'page' => [
                         'first_item'        => $result->firstItem(),
@@ -90,7 +91,7 @@ class RestApiModelService implements ServiceInterface
             $model = $baseQuery->first();
             if($model)
             {
-                $serviceResult->data($model, Str::snake(class_basename($this->model)));
+                $serviceResult->appendData($model, Str::snake(class_basename($this->model)));
             }
             else
             {
@@ -334,7 +335,7 @@ class RestApiModelService implements ServiceInterface
             }
             if($params->getDistinct() != null)
             {
-                $query->distinct();
+                $query->distinct($params->getDistinct());
             }
             if($params->getGroupBy() != null)
             {
