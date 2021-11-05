@@ -18,10 +18,10 @@ trait HasMedia
 
     public function belongsToMedia($mediaType = null) {
         if($mediaType) {
-            return $this->belongsToMany(Media::class, $this->mediaTableName(), null, 'media_id')
+            return $this->connection('tenant')->belongsToMany(Media::class, $this->mediaTableName(), null, 'media_id')
                 ->where('media.media_type_id', '=', $mediaType);
         }else {
-            return $this->belongsToMany(Media::class, $this->mediaTableName(), null, 'media_id');
+            return $this->connection('tenant')->belongsToMany(Media::class, $this->mediaTableName(), null, 'media_id');
         }
     }
 }
