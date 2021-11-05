@@ -6,7 +6,6 @@ namespace Ruinton\Service;
 
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
@@ -16,6 +15,7 @@ use Ruinton\Enums\MimeTypes;
 use Ruinton\Helpers\Uploader\UploadHelper;
 use Ruinton\Models\Media;
 use Ruinton\Models\MediaType;
+use Spatie\Multitenancy\Models\Tenant;
 
 
 class MediaService
@@ -103,7 +103,7 @@ class MediaService
     {
         if($model != null)
         {
-            DB::table(Str::singular($model->getTable()).'_media')
+            DB::table(Tenant::current()->getDatabaseName().'.'.Str::singular($model->getTable()).'_media')
                 ->where('media_id', '=', $id)
                 ->delete();
         }
