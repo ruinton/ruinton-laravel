@@ -3,14 +3,12 @@
 
 namespace Ruinton\Service;
 
-use http\Env\Request;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Ruinton\Enums\FilterOperators;
-use Ruinton\Enums\MediaTypes;
 use Ruinton\Parser\QueryParam;
 use Ruinton\Traits\DefaultEventListener;
 

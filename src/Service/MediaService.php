@@ -32,7 +32,7 @@ class MediaService
         $modelName = strtolower($baseModel->getTable());
         $fileName = uniqid().'-'.$modelName.'.'.$file->extension();
         $storage_dir = '/public/'.$tenant.'/media/'.$modelName.'/temp/';
-        $path = "app\\public\\$tenant\\media\\$modelName\\temp\\";
+        $path = "app/public/$tenant/media/$modelName/temp/";
         $url = '/storage/'.$tenant.'/media/'.$modelName.'/temp/'.$fileName;
 
         $mimeTypeReflection = new \ReflectionClass(MimeTypes::class);
