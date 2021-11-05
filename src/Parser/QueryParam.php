@@ -74,12 +74,12 @@ class QueryParam
 
     public function addSort(string $column, $desc = SortOrder::DESCENDING)
     {
-        try{
-            array_push($this->sort, [$column, $desc]);
-        }catch (\Exception $e) {
+        if(empty($this->sort)) {
             $this->sort = [
                 [$column, $desc]
             ];
+        }else {
+            array_push($this->sort, [$column, $desc]);
         }
     }
 

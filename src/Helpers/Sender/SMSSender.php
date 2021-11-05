@@ -56,9 +56,14 @@ class SMSSender
         return false;
     }
 
-    public function sendSMSWithGhasedakIO($receptor, $token)
+    public function sendSMSWithGhasedakIO($receptor, $token, ...$params)
     {
         $curl = curl_init();
+        $paramString = '';
+        foreach ($params as $key => $param) {
+            $paramString .= '&param'.($key+2).'='.(str_replace ( ' ', '_', $param));
+        }
+        $token = str_replace ( ' ', '_', $token);
         curl_setopt_array($curl,
             array(
                 CURLOPT_URL => "https://api.ghasedak.me/v2/verification/send/simple ",
@@ -70,7 +75,7 @@ class SMSSender
                 CURLOPT_SSL_VERIFYPEER => false,
 //                CURLOPT_HTTPS_VERSION => CURL_https_VERSION_1_1,
                 CURLOPT_CUSTOMREQUEST => "POST",
-                CURLOPT_POSTFIELDS => "type=1&receptor=$receptor&template=".$this->templateName."&param1=$token",
+                CURLOPT_POSTFIELDS => "type=1&receptor=$receptor&template=".$this->templateName."&param1=$token".$paramString,
                 CURLOPT_HTTPHEADER => array(
                     "apikey: db38122e42dca8b6d69cd712ceba9f11bbe4f9209ffe4e14d82e645fc23f5281",
                     "cache-control: no-cache",
@@ -82,11 +87,14 @@ class SMSSender
         $err = curl_error($curl);
         curl_close($curl);
         if ($err) {
-//             echo "cURL Error #:" . $err;
-            return false;
+            echo "cURL Error #:" . $err;
         } else {
-            return true;
+            $response = json_decode($response, true);
+            if($response['result']['code'] === 200) {
+                return true;
+            }
         }
+        return false;
     }
 
     public function sendVoiceWithGhasedakIO($receptor, $message)

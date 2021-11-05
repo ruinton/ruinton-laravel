@@ -48,7 +48,7 @@ class RestApiModelService implements ServiceInterface
         $serviceResult = new ServiceResult($this->model->getTable());
         $baseQuery = $this->model->newQuery();
         $this->applyParamsOnQuery($baseQuery, $queryParam);
-        $serviceResult->appendData($baseQuery->toSql(), 'sql');
+//        $serviceResult->appendData($baseQuery->toSql(), 'sql');
         if($pagination)
         {
             $result = $baseQuery->paginate(
