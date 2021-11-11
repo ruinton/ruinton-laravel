@@ -5,6 +5,8 @@ namespace Ruinton;
 use Illuminate\Support\ServiceProvider;
 use Ruinton\Commands\MakeController;
 use Ruinton\Commands\MakeService;
+use Ruinton\Geo\Migration\GisBlueprint;
+use Ruinton\Geo\Migration\TimescaleBlueprint;
 use Ruinton\Middleware\QueryStringParserMiddleware;
 
 class RuintonServiceProvider extends ServiceProvider
@@ -37,6 +39,9 @@ class RuintonServiceProvider extends ServiceProvider
                 MakeService::class,
                 MakeController::class
             ]);
+
         }
+        GisBlueprint::installMacro();
+        TimescaleBlueprint::installMacro();
     }
 }

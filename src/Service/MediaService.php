@@ -10,7 +10,6 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
-use Ruinton\Enums\MimeTypeIndexes;
 use Ruinton\Enums\MimeTypes;
 use Ruinton\Helpers\Uploader\UploadHelper;
 use Ruinton\Models\Media;
