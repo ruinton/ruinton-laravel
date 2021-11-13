@@ -41,7 +41,5 @@ class RuintonServiceProvider extends ServiceProvider
             ]);
 
         }
-        GisBlueprint::installMacro();
-        TimescaleBlueprint::installMacro();
     }
 }
