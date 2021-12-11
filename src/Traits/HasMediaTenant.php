@@ -6,7 +6,7 @@ use Illuminate\Support\Str;
 use Ruinton\Models\Media;
 use Spatie\Multitenancy\Models\Tenant;
 
-trait HasMedia
+trait HasMediaTenant
 {
     public function media()
     {
