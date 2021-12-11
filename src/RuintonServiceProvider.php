@@ -39,7 +39,6 @@ class RuintonServiceProvider extends ServiceProvider
                 MakeService::class,
                 MakeController::class
             ]);
-
         }
     }
 }
