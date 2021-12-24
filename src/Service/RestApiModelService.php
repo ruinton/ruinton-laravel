@@ -370,8 +370,9 @@ class RestApiModelService implements ServiceInterface
         if(!isset($this->model['media'])) return;
         /** @var MediaService $mediaService */
         $mediaService = App::make(MediaService::class);
-        foreach ($data as $media) {
-            if(!$this->isMedia($media)) continue;
+        $mediaFields = array_keys($this->getMediaRules());
+        foreach ($data as $key => $media) {
+            if(!$this->isMedia($media, $key, $mediaFields)) continue;
             $mediaList = [];
             if(isset($media[0])) {
                 $mediaList = $media;
@@ -388,9 +389,10 @@ class RestApiModelService implements ServiceInterface
         }
     }
 
-    public function isMedia($data) {
+    public function isMedia($data, $key, $mediaFields) {
         if(!is_array($data)) return false;
         if(count($data) < 1) return false;
+        if(!in_array($key, $mediaFields)) return false;
         return true;
     }
 

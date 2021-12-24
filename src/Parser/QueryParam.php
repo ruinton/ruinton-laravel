@@ -85,10 +85,18 @@ class QueryParam
 
     public function addWith(string $relation)
     {
-        try{
-            array_push($this->with, $relation);
-        }catch (\Exception $e) {
-            $this->with = [$relation];
+        if($this->with === null) {
+            $this->setWith([$relation]);
+        }else {
+            if(is_array($this->with)) {
+                try {
+                    array_push($this->with, $relation);
+                } catch (\Exception $e) {
+                    $this->with = [$relation];
+                }
+            }else {
+                $this->with = [$this->with, $relation];
+            }
         }
     }
 
