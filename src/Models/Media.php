@@ -18,8 +18,9 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Media extends Model
 {
-    protected $connection = 'tenant';
+//    protected $connection = 'tenant';
     public $timestamps = false;
+    public ?string $database = null;
     /**
      * The "type" of the auto-incrementing ID.
      *

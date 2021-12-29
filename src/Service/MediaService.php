@@ -14,7 +14,6 @@ use Ruinton\Enums\MimeTypes;
 use Ruinton\Helpers\Uploader\UploadHelper;
 use Ruinton\Models\Media;
 use Ruinton\Models\MediaType;
-use Spatie\Multitenancy\Models\Tenant;
 
 
 class MediaService
@@ -39,7 +38,7 @@ class MediaService
         if(!in_array($file->getMimeType(), $mimeTypeList)) {
             return false;
         }
-        $result = Media::create([
+        $result = $baseModel->media()->getRelated()::create([
             'media_type_id' => $mediaType,
             'mime_type_id'  => MimeTypes::getIndexByName($file->getMimeType()),
             'name'          => $file->getClientOriginalName(),
@@ -56,7 +55,7 @@ class MediaService
     public function deleteMedia($id, Model $relationModel)
     {
         $this->unlinkMedia($id, $relationModel);
-        $media = Media::find($id);
+        $media = $relationModel->media()->getRelated()::find($id);
         if($media->delete())
         {
             /** @var Media $media */
@@ -75,7 +74,7 @@ class MediaService
 //            $baseModel->getTable().'_id' => $id
 //        ]);
 //        $result = $newModel->save();
-        $mediaList = Media::query()->whereIn('id', $mediaIds)->get();
+        $mediaList = $baseModel->media()->getRelated()::query()->whereIn('id', $mediaIds)->get();
         foreach ($mediaList as $media) {
             $newPath = storage_path(str_replace('temp', $baseModel[$baseModel->getKeyName()], $media->path));
             $directory = storage_path(explode("temp", $media->path)[0] . $baseModel[$baseModel->getKeyName()]);
@@ -102,7 +101,8 @@ class MediaService
     {
         if($model != null)
         {
-            DB::table(Tenant::current()->getDatabaseName().'.'.Str::singular($model->getTable()).'_media')
+            $tableName = $model->getConnectionName().'.'.Str::singular($model->getTable()).'_media';
+            DB::table($tableName)
                 ->where('media_id', '=', $id)
                 ->delete();
         }
