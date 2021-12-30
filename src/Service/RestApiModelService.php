@@ -416,8 +416,7 @@ class RestApiModelService implements ServiceInterface
                 }
                 if (!in_array($file->getMimeType(), $mimeTypes)) continue;
             }
-            $media = $mediaService->createMedia($file, $mediaRules[$fieldKey]['type'],
-                $this->model);
+            $media = $mediaService->createMedia($file, $mediaRules[$fieldKey]['type'], $this->model);
             $serviceResult->appendData($media, $fieldKey);
         }
 
