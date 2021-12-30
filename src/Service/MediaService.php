@@ -101,7 +101,7 @@ class MediaService
     {
         if($model != null)
         {
-            $tableName = $model->getConnectionName().'.'.Str::singular($model->getTable()).'_media';
+            $tableName = $model->getConnection()->getDatabaseName().'.'.Str::singular($model->getTable()).'_media';
             DB::table($tableName)
                 ->where('media_id', '=', $id)
                 ->delete();
