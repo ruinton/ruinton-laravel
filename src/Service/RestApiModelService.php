@@ -418,6 +418,8 @@ class RestApiModelService implements ServiceInterface
             }
             $media = $mediaService->createMedia($file, $mediaRules[$fieldKey]['type'], $this->model);
             $serviceResult->appendData($media, $fieldKey);
+            $serviceResult->appendData($this->model, $fieldKey.'model');
+            $serviceResult->appendData($mediaRules[$fieldKey]['type'], $fieldKey.'rule');
         }
 
         $serviceResult->status(200)->message('Media uploaded')->data($serviceResult->getData(),
