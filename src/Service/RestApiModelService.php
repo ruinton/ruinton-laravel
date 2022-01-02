@@ -47,6 +47,7 @@ class RestApiModelService implements ServiceInterface
         $baseQuery = $this->model->newQuery();
         $this->applyParamsOnQuery($baseQuery, $queryParam);
 //        $serviceResult->appendData($baseQuery->toSql(), 'sql');
+//        $serviceResult->appendData($baseQuery->getBindings(), 'params');
         if($pagination)
         {
             $result = $baseQuery->paginate(
@@ -317,6 +318,12 @@ class RestApiModelService implements ServiceInterface
                     }
                     else if(strcmp($filter[1], FilterOperators::IS_NOT_NULL) === 0) {
                         $query->whereNotNull($this->model->getTable().'.'.$key);
+                    }
+                    else if(strcmp($filter[1], FilterOperators::IN) === 0) {
+                        $query->whereIn($this->model->getTable().'.'.$key, explode(",", $filter[0]));
+                    }
+                    else if(strcmp($filter[1], FilterOperators::NOT_IN) === 0) {
+                        $query->whereNotIn($this->model->getTable().'.'.$key, explode(",", $filter[0]));
                     }
                     else {
                         $query->where($this->model->getTable() . '.' . $key, $filter[1], $filter[0]);
