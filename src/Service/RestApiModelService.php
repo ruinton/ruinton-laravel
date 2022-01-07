@@ -200,7 +200,7 @@ class RestApiModelService implements ServiceInterface
             $deleteModel = $query->first();
             if($deleteModel)
             {
-                $this->deleteLinkedMedia($id);
+                return $this->deleteLinkedMedia($id);
                 $this->beforeDelete($deleteModel, $queryParam, $id);
                 if($deleteModel->delete())
                 {
