@@ -108,6 +108,21 @@ class MediaService
         }
     }
 
+    public function deleteLinkedMedia($id, ?Model $model)
+    {
+        if($model != null)
+        {
+            $modelName = Str::singular($model->getTable());
+            $tableName = $model->getConnection()->getDatabaseName() .'.'.$modelName.'_media';
+            $media = DB::table($tableName)
+                ->where($modelName.'_id', '=', $id)
+                ->get();
+            foreach ($media as $m) {
+                $this->deleteMedia($m->media_id, $model);
+            }
+        }
+    }
+
     protected function updateStatistics(int $mimeTypeIndex, int $countEffect, int $sizeEffect)
     {
         $query = MediaType::query();
