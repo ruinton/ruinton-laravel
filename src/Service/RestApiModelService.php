@@ -200,6 +200,7 @@ class RestApiModelService implements ServiceInterface
             $deleteModel = $query->first();
             if($deleteModel)
             {
+                $this->deleteLinkedMedia($id);
                 $this->beforeDelete($deleteModel, $queryParam, $id);
                 if($deleteModel->delete())
                 {
@@ -401,6 +402,14 @@ class RestApiModelService implements ServiceInterface
         if(count($data) < 1) return false;
         if(!in_array($key, $mediaFields)) return false;
         return true;
+    }
+
+    public function deleteLinkedMedia(int $id = 0)
+    {
+        if(!isset($this->model['media'])) return;
+        foreach ($this->model['media'] as $media) {
+            $this->deleteMedia($media->id);
+        }
     }
 
     public function createMedia(array $files) : ServiceResult
