@@ -406,10 +406,13 @@ class RestApiModelService implements ServiceInterface
 
     public function deleteLinkedMedia(int $id = 0)
     {
+        $serviceResult = new ServiceResult();
         if(!isset($this->model['media'])) return;
+        $serviceResult->appendData($this->model['media'], 'all media');
         foreach ($this->model['media'] as $media) {
-            $this->deleteMedia($media->id);
+            $serviceResult->appendData($this->deleteMedia($media->id), 'media'.$media->id);
         }
+        return $serviceResult;
     }
 
     public function createMedia(array $files) : ServiceResult
