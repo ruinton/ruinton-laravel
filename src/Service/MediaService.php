@@ -127,8 +127,9 @@ class MediaService
     {
         $query = MediaType::query();
         $mediaType = $query->where('id', '=', $mimeTypeIndex)->first();
+        $calculatedCount = $mediaType->count + $countEffect;
         if($mediaType) {
-            $mediaType->count = $mediaType->count + $countEffect;
+            $mediaType->count = $calculatedCount < 0 ? 0 : $calculatedCount;
             $mediaType->size = $mediaType->size + $sizeEffect;
             $mediaType->save();
         }
