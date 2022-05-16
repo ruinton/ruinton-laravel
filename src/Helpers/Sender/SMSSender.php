@@ -7,9 +7,11 @@ namespace Ruinton\Helpers\Sender;
 class SMSSender
 {
     protected $templateName = '';
+    protected $apiKey = '';
 
     public function __construct()
     {
+        $this->apiKey = env('SMS_API_KEY', '');
     }
 
     public function setTemplate($templateName)
@@ -17,7 +19,12 @@ class SMSSender
         $this->templateName = $templateName;
     }
 
-    public static function Ghasedak($receptor, $template, $params) {
+    public function setApiKey($apiKey)
+    {
+        $this->apiKey = $apiKey;
+    }
+
+    public static function Ghasedak($receptor, $template, $params, $apiKey) {
         $curl = curl_init();
         $paramString = '';
         foreach ($params as $key => $param) {
@@ -36,7 +43,7 @@ class SMSSender
                 CURLOPT_CUSTOMREQUEST => "POST",
                 CURLOPT_POSTFIELDS => "type=1&receptor=$receptor&template=".$template.$paramString,
                 CURLOPT_HTTPHEADER => array(
-                    "apikey: db38122e42dca8b6d69cd712ceba9f11bbe4f9209ffe4e14d82e645fc23f5281",
+                    "apikey: ".$apiKey,
                     "cache-control: no-cache",
                     "content-type: application/x-www-form-urlencoded",
                 )
@@ -77,7 +84,7 @@ class SMSSender
                 CURLOPT_CUSTOMREQUEST => "POST",
                 CURLOPT_POSTFIELDS => "type=1&receptor=$receptor&template=".$this->templateName."&param1=$token".$paramString,
                 CURLOPT_HTTPHEADER => array(
-                    "apikey: db38122e42dca8b6d69cd712ceba9f11bbe4f9209ffe4e14d82e645fc23f5281",
+                    "apikey: ".$this->apiKey,
                     "cache-control: no-cache",
                     "content-type: application/x-www-form-urlencoded",
                 )
@@ -113,7 +120,7 @@ class SMSSender
                 CURLOPT_CUSTOMREQUEST => "POST",
                 CURLOPT_POSTFIELDS => "message=$message&receptor=$receptor",
                 CURLOPT_HTTPHEADER => array(
-                    "apikey: db38122e42dca8b6d69cd712ceba9f11bbe4f9209ffe4e14d82e645fc23f5281",
+                    "apikey: ".$this->apiKey,
                     "cache-control: no-cache",
                     "content-type: application/x-www-form-urlencoded",
                 )
