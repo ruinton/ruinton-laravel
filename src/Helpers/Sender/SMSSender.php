@@ -68,7 +68,7 @@ class SMSSender
         $curl = curl_init();
         $paramString = '';
         foreach ($params as $key => $param) {
-            $paramString .= '&param'.($key+2).'='.(str_replace ( ' ', '_', $param));
+            $paramString .= '&param'.($key+2).'='.(utf8_encode($param));
         }
         $token = str_replace ( ' ', '_', $token);
         curl_setopt_array($curl,
