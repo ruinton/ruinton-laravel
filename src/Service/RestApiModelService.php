@@ -11,6 +11,7 @@ use Illuminate\Support\Str;
 use Ruinton\Enums\FilterOperators;
 use Ruinton\Parser\QueryParam;
 use Ruinton\Traits\DefaultEventListener;
+use Spatie\Multitenancy\Models\Tenant;
 
 class RestApiModelService implements ServiceInterface
 {
@@ -432,7 +433,7 @@ class RestApiModelService implements ServiceInterface
                 }
                 if (!in_array($file->getMimeType(), $mimeTypes)) continue;
             }
-            $media = $mediaService->createMedia($file, $mediaRules[$fieldKey]['type'], $this->model);
+            $media = $mediaService->createMedia($file, $mediaRules[$fieldKey]['type'], $this->model, Tenant::current()->id);
             $serviceResult->appendData($media, $fieldKey);
         }
 
