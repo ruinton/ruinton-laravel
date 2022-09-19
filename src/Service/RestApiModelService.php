@@ -457,4 +457,15 @@ class RestApiModelService implements ServiceInterface
         }
         return $serviceResult;
     }
+
+    public function createServiceResult($status, $message, $data, $queryParam = null) {
+        $serviceResult = new ServiceResult($this->model->getTable());
+        $serviceResult->status($status)->message($message);
+        if ($queryParam !== null) {
+            $serviceResult->data(($queryParam->hasColumns()) ? $data : $data->setVisible($queryParam->getColumns()), Str::snake(class_basename($this->model)));
+        } else {
+            $serviceResult->data($data, Str::snake(class_basename($this->model)));
+        }
+        return $serviceResult;
+    }
 }
