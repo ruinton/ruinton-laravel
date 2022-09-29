@@ -18,6 +18,7 @@ class RestApiModelService implements ServiceInterface
     use DefaultEventListener;
 
     protected Model $model;
+    protected bool $hasTenant = true;
 
     public function __construct(Model $model)
     {
@@ -433,7 +434,7 @@ class RestApiModelService implements ServiceInterface
                 }
                 if (!in_array($file->getMimeType(), $mimeTypes)) continue;
             }
-            $media = $mediaService->createMedia($file, $mediaRules[$fieldKey]['type'], $this->model, Tenant::current()->id);
+            $media = $mediaService->createMedia($file, $mediaRules[$fieldKey]['type'], $this->model, $this->hasTenant ? Tenant::current()->id : 'base');
             $serviceResult->appendData($media, $fieldKey);
         }
 
