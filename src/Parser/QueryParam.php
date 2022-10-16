@@ -21,6 +21,7 @@ class QueryParam
     protected $data;
     protected $group;
     protected $with;
+    protected $withCount;
     protected $distinct;
     protected $trashed;
 
@@ -42,6 +43,7 @@ class QueryParam
         $this->data = null;
         $this->group = null;
         $this->with = null;
+        $this->withCount = null;
         $this->distinct = null;
         $this->trashed = false;
     }
@@ -100,9 +102,31 @@ class QueryParam
         }
     }
 
+    public function addWithCount(string $relation)
+    {
+        if($this->with === null) {
+            $this->setWithCount([$relation]);
+        }else {
+            if(is_array($this->withCount)) {
+                try {
+                    array_push($this->withCount, $relation);
+                } catch (\Exception $e) {
+                    $this->withCount = [$relation];
+                }
+            }else {
+                $this->withCount = [$this->withCount, $relation];
+            }
+        }
+    }
+
     public function hasWith(): bool
     {
         return $this->with !== null;
+    }
+
+    public function hasWithCount(): bool
+    {
+        return $this->withCount !== null;
     }
 
     public function hasSort(): bool
@@ -320,11 +344,27 @@ class QueryParam
     }
 
     /**
+     * @return mixed
+     */
+    public function getWithCount()
+    {
+        return $this->withCount;
+    }
+
+    /**
      * @param mixed $with
      */
     public function setWith($with): void
     {
         $this->with = $with;
+    }
+
+    /**
+     * @param mixed $with
+     */
+    public function setWithCount($with): void
+    {
+        $this->withCount = $with;
     }
 
     /**

@@ -349,9 +349,13 @@ class RestApiModelService implements ServiceInterface
             {
                 $query->groupBy($params->getGroupBy());
             }
-            if($params->getWith() != null)
+            if($params->hasWith())
             {
                 $query->with($params->getWith());
+            }
+            if($params->hasWithCount())
+            {
+                $query->withCount($params->getWithCount());
             }
             if($params->getTrashed())
             {
