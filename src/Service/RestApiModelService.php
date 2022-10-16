@@ -368,7 +368,7 @@ class RestApiModelService implements ServiceInterface
             {
                 $query->orderByDesc($this->model->getKeyName());
             }
-            if ($query->hasColumns()) {
+            if ($params->hasColumns()) {
                 $query->select($params->getColumns());
             }
             if($params->hasWithCount())
