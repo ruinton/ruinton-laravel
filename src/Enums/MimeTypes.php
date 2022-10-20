@@ -42,6 +42,8 @@ final class MimeTypes
     public const APPLICATION_POWERPOINTX= "application/vnd.openxmlformats-officedocument.presentationml.presentation";
     public const APPLICATION_ACCESSX    = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
+    public const IMAGE_WEBP             = "image/webp";
+
     public final static function getIndexByName(string $mimeName)
     {
         $mimeClass = new \ReflectionClass(MimeTypes::class);
