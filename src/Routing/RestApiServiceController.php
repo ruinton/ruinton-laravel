@@ -5,7 +5,6 @@ namespace Ruinton\Routing;
 
 
 use Illuminate\Http\Request;
-use Illuminate\Http\UploadedFile;
 use Ruinton\Service\ServiceInterface;
 use Ruinton\Service\ServiceResult;
 
@@ -157,6 +156,22 @@ class RestApiServiceController extends RuintonController
     protected function destroyAction(Request $request, $id) : ServiceResult
     {
         return $this->service->delete(intval($id));
+    }
+
+    /**
+     * Swap priorities
+     */
+    public function swapPriority(Request $request, $fromId, $toId)
+    {
+        if(intval($fromId) < 1)
+        {
+            return $this->generateResponse(404, 'Input error', 'selected from model id is not in range')->toJsonResponse();
+        }
+        if(intval($toId) < 1)
+        {
+            return $this->generateResponse(404, 'Input error', 'selected to model id is not in range')->toJsonResponse();
+        }
+        return $this->service->swapPriority($fromId, $toId)->toJsonResponse();
     }
 
     /**

@@ -381,6 +381,29 @@ class RestApiModelService implements ServiceInterface
         }
     }
 
+    public function swapPriority(int $fromId = 0, int $toId = 0) : ServiceResult
+    {
+        $result = new ServiceResult();
+        $from = $this->model->find($fromId);
+        if ($from) {
+            $to = $this->model->find($toId);
+            if ($to) {
+                $temp = $to->priority;
+                $to->priority = $from->priority;
+                $to->save();
+                $from->priority = $temp;
+                $from->save();
+                return $result->status(200)->message('model priorities swap completed')
+                    ->data($from, 'from')
+                    ->appendData($to, 'to');
+            } else {
+                return $result->status(404)->message('to model not fount');
+            }
+        } else {
+            return $result->status(404)->message('from model not fount');
+        }
+    }
+
     public function getMediaRules() {
         return [];
     }
