@@ -388,11 +388,16 @@ class RestApiModelService implements ServiceInterface
         if ($from) {
             $to = $this->model->find($toId);
             if ($to) {
-                $temp = $to->priority;
-                $to->priority = $from->priority;
-                $to->save();
-                $from->priority = $temp;
-                $from->save();
+                $query = $this->model::query();
+                $between = $query->whereBetween('id', [$from->id, $to->id])->all(['id']);
+                $swapList = [$from];
+                array_push($swapList, ...$between);
+                array_push($swapList, $to);
+                while (count($swapList) > 1) {
+                    $actor = array_shift($swapList);
+                    $target = $swapList[0];
+                    $this->swapModelPriorities($actor, $target);
+                }
                 return $result->status(200)->message('model priorities swap completed')
                     ->data($from, 'from')
                     ->appendData($to, 'to');
@@ -402,6 +407,14 @@ class RestApiModelService implements ServiceInterface
         } else {
             return $result->status(404)->message('from model not fount');
         }
+    }
+
+    protected function swapModelPriorities($from, $to) {
+        $temp = $to->priority;
+        $to->priority = $from->priority;
+        $to->save();
+        $from->priority = $temp;
+        $from->save();
     }
 
     public function getMediaRules() {
