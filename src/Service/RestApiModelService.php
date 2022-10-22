@@ -389,7 +389,7 @@ class RestApiModelService implements ServiceInterface
             $to = $this->model->find($toId);
             if ($to) {
                 $query = $this->model::query();
-                $between = $query->whereBetween('priority', [$from->priority, $to->priority])->select(['id'])->get();
+                $between = $query->select(['id'])->where('priority', '>', $from->priority)->where('priority', '<', $to->priority)->get();
                 $swapList = [$from];
                 array_push($swapList, ...$between);
                 array_push($swapList, $to);
