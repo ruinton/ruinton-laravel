@@ -391,20 +391,14 @@ class RestApiModelService implements ServiceInterface
                 $query = $this->model::query();
                 if ($from->priority < $to->priority) {
                     $between = $query->select(['id', 'priority', 'name'])->where('priority', '>', $from->priority)->where('priority', '<', $to->priority)->orderBy('priority', 'asc')->get();
-                    $swapList = [$from];
-                    array_push($swapList, ...$between);
-                    array_push($swapList, $to);
                 } else {
                     $between = $query->select(['id', 'priority', 'name'])->where('priority', '<', $from->priority)->where('priority', '>', $to->priority)->orderBy('priority', 'desc')->get();
-                    $swapList = [$to];
-                    array_push($swapList, ...$between);
-                    array_push($swapList, $from);
                 }
+                $swapList = [...$between, $to];
                 $temp = $swapList;
                 while (count($swapList) > 1) {
-                    $actor = array_shift($swapList);
-                    $target = $swapList[0];
-                    $this->swapModelPriorities($actor, $target);
+                    $target = array_shift($swapList);
+                    $this->swapModelPriorities($from, $target);
                 }
                 return $result->status(200)->message('model priorities swap completed')
                     ->data($from, 'from')
