@@ -393,7 +393,7 @@ class RestApiModelService implements ServiceInterface
                 $swapList = [$from];
                 array_push($swapList, ...$between);
                 array_push($swapList, $to);
-                $temp = clone $swapList;
+                $temp = $swapList;
                 while (count($swapList) > 1) {
                     $actor = array_shift($swapList);
                     $target = $swapList[0];
@@ -402,7 +402,7 @@ class RestApiModelService implements ServiceInterface
                 return $result->status(200)->message('model priorities swap completed')
                     ->data($from, 'from')
                     ->appendData($to, 'to')
-                    ->appendData($swapList, 'swap');
+                    ->appendData($temp, 'swap');
             } else {
                 return $result->status(404)->message('to model not fount');
             }
