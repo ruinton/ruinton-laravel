@@ -384,9 +384,9 @@ class RestApiModelService implements ServiceInterface
     public function swapPriority(int $fromId = 0, int $toId = 0) : ServiceResult
     {
         $result = new ServiceResult();
-        $from = $this->model->find($fromId);
+        $from = $this->model->newQuery()->where('id', '=', $fromId)->select(['id', 'priority'])->first();
         if ($from) {
-            $to = $this->model->find($toId);
+            $to = $this->model->newQuery()->where('id', '=', $toId)->select(['id', 'priority'])->first();
             if ($to) {
                 $query = $this->model::query();
                 $between = $query->select(['id'])->where('priority', '>', $from->priority)->where('priority', '<', $to->priority)->get();
