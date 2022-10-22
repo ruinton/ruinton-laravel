@@ -396,7 +396,7 @@ class RestApiModelService implements ServiceInterface
                 }
                 $swapList = [...$between, $to];
                 $temp = $swapList;
-                while (count($swapList) > 1) {
+                while (count($swapList) > 0) {
                     $target = array_shift($swapList);
                     $this->swapModelPriorities($from, $target);
                 }
