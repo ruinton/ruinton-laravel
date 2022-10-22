@@ -384,15 +384,15 @@ class RestApiModelService implements ServiceInterface
     public function swapPriority(int $fromId = 0, int $toId = 0) : ServiceResult
     {
         $result = new ServiceResult();
-        $from = $this->model->newQuery()->where('id', '=', $fromId)->select(['id', 'priority', 'name'])->first();
+        $from = $this->model->newQuery()->where('id', '=', $fromId)->select(['id', 'priority'])->first();
         if ($from) {
-            $to = $this->model->newQuery()->where('id', '=', $toId)->select(['id', 'priority', 'name'])->first();
+            $to = $this->model->newQuery()->where('id', '=', $toId)->select(['id', 'priority'])->first();
             if ($to) {
                 $query = $this->model::query();
                 if ($from->priority < $to->priority) {
-                    $between = $query->select(['id', 'priority', 'name'])->where('priority', '>', $from->priority)->where('priority', '<', $to->priority)->orderBy('priority', 'asc')->get();
+                    $between = $query->select(['id', 'priority'])->where('priority', '>', $from->priority)->where('priority', '<', $to->priority)->orderBy('priority', 'asc')->get();
                 } else {
-                    $between = $query->select(['id', 'priority', 'name'])->where('priority', '<', $from->priority)->where('priority', '>', $to->priority)->orderBy('priority', 'desc')->get();
+                    $between = $query->select(['id', 'priority'])->where('priority', '<', $from->priority)->where('priority', '>', $to->priority)->orderBy('priority', 'desc')->get();
                 }
                 $swapList = [...$between, $to];
                 $temp = $swapList;
