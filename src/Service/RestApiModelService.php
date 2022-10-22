@@ -389,7 +389,7 @@ class RestApiModelService implements ServiceInterface
             $to = $this->model->find($toId);
             if ($to) {
                 $query = $this->model::query();
-                $between = $query->whereBetween('id', [$from->id, $to->id])->select(['id'])->get();
+                $between = $query->whereBetween('priority', [$from->priority, $to->priority])->select(['id'])->get();
                 $swapList = [$from];
                 array_push($swapList, ...$between);
                 array_push($swapList, $to);
@@ -402,6 +402,7 @@ class RestApiModelService implements ServiceInterface
                 return $result->status(200)->message('model priorities swap completed')
                     ->data($from, 'from')
                     ->appendData($to, 'to')
+                    ->appendData($between, 'between')
                     ->appendData($temp, 'swap');
             } else {
                 return $result->status(404)->message('to model not fount');
