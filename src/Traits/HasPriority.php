@@ -2,7 +2,7 @@
 
 namespace Ruinton\Traits;
 
-trait HasMedia
+trait HasPriority
 {
     public static function boot()
     {
