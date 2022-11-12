@@ -18,6 +18,14 @@ class PostGisSchema
         DB::statement("ALTER TABLE $table ADD COLUMN $name geometry(POLYGON,4326)");
     }
 
+    public static function createGeometryMultiLineString($table, $name) {
+        DB::statement("ALTER TABLE $table ADD COLUMN $name geometry(MultiLineString,4326)");
+    }
+
+    public static function createGeometryCollection($table, $name) {
+        DB::statement("ALTER TABLE $table ADD COLUMN $name geometry(GeometryCollection,4326)");
+    }
+
     public static function createGeometryMultiPolygon($table, $name) {
         DB::statement("ALTER TABLE $table ADD COLUMN $name geometry(MULTIPOLYGON,4326)");
     }
