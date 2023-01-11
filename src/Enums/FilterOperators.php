@@ -27,7 +27,7 @@ final class FilterOperators
         'neq' => self::NOT_EQUALS,
         'lt' => self::LESS_THAN,
         'gt' => self::GRATER_THAN,
-        'lte' => self::GRATER_THAN_EQUAL,
+        'lte' => self::LESS_THAN_EQUAL,
         'gte' => self::GRATER_THAN_EQUAL,
         'has' => self::HAS,
         'in' => self::IN,
