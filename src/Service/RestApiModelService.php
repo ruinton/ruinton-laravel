@@ -431,11 +431,6 @@ class RestApiModelService implements ServiceInterface
         $mediaService = App::make(MediaService::class);
         $mediaFields = array_keys($this->getMediaRules());
         foreach ($data as $key => $media) {
-            if(!isset($this->model['media'])) return;
-        /** @var MediaService $mediaService */
-        $mediaService = App::make(MediaService::class);
-        $mediaFields = array_keys($this->getMediaRules());
-        foreach ($data as $key => $media) {
             if(!$this->isMedia($media, $key, $mediaFields)) continue;
             $mediaList = [];
             if(isset($media[0])) {
