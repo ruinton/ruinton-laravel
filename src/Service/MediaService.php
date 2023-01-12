@@ -68,6 +68,12 @@ class MediaService
     public function linkMedia(Model $baseModel, $mediaIds)
     {
         $result = $baseModel->media()->syncWithoutDetaching($mediaIds);
+        return $result;
+    }
+
+    public function linkMediaAndMove(Model $baseModel, $mediaIds)
+    {
+        $result = $baseModel->media()->syncWithoutDetaching($mediaIds);
 //        $newModel = $relationModel->replicate();
 //        $newModel->fill([
 //            'media_id' => $mediaId,

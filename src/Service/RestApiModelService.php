@@ -439,12 +439,18 @@ class RestApiModelService implements ServiceInterface
                 $mediaList = [$media];
             }
             $mediaIds = [];
+            $mediaLinks = [];
             foreach ($mediaList as $mediaItem) {
-                array_push($mediaIds, $mediaItem['id']);
+                if ($mediaItem['id']) {
+                    array_push($mediaIds, $mediaItem['id']);
+                } else if ($mediaItem['link']) {
+                    array_push($mediaLinks, $mediaItem['link']);
+                }
             }
             $result = new ServiceResult($this->model->getTable());
 //            return $result->status(404)->data($mediaIds, 'ids');
-            $mediaService->linkMedia($model, $mediaIds);
+            $mediaService->linkMediaAndMove($model, $mediaIds);
+            $mediaService->linkMedia($model, $mediaLinks);
         }
     }
 
