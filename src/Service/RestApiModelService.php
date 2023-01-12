@@ -431,6 +431,11 @@ class RestApiModelService implements ServiceInterface
         $mediaService = App::make(MediaService::class);
         $mediaFields = array_keys($this->getMediaRules());
         foreach ($data as $key => $media) {
+            if(!isset($this->model['media'])) return;
+        /** @var MediaService $mediaService */
+        $mediaService = App::make(MediaService::class);
+        $mediaFields = array_keys($this->getMediaRules());
+        foreach ($data as $key => $media) {
             if(!$this->isMedia($media, $key, $mediaFields)) continue;
             $mediaList = [];
             if(isset($media[0])) {
@@ -441,9 +446,9 @@ class RestApiModelService implements ServiceInterface
             $mediaIds = [];
             $mediaLinks = [];
             foreach ($mediaList as $mediaItem) {
-                if ($mediaItem['id']) {
+                if (isset($mediaItem['id'])) {
                     array_push($mediaIds, $mediaItem['id']);
-                } else if ($mediaItem['link']) {
+                } else if (isset($mediaItem['link'])) {
                     array_push($mediaLinks, $mediaItem['link']);
                 }
             }
