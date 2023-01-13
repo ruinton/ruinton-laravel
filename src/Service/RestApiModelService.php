@@ -167,7 +167,7 @@ class RestApiModelService implements ServiceInterface
                 {
                     $this->afterUpdate($updateModel, $queryParam, $id, $data);
                     $serviceResult->status(200)->message(class_basename($this->model).' updated successfully')
-                        ->data($updateModel,
+                        ->appendData($updateModel,
                             Str::snake(class_basename($this->model)));
                 }
                 else
@@ -319,23 +319,24 @@ class RestApiModelService implements ServiceInterface
                     $query->where($key, $filter[1], $filter[0]);
                 }
                 else{
+                    $prefix = str_contains($key, '.') ? '' : $this->model->getTable().'.';
                     if(strcmp($filter[1], FilterOperators::IS_NULL) === 0) {
-                        $query->whereNull($this->model->getTable().'.'.$key);
+                        $query->whereNull($prefix.$key);
                     }
                     else if(strcmp($filter[1], FilterOperators::IS_NOT_NULL) === 0) {
-                        $query->whereNotNull($this->model->getTable().'.'.$key);
+                        $query->whereNotNull($prefix.$key);
                     }
                     else if(strcmp($filter[1], FilterOperators::HAS) === 0) {
-                        $query->whereHas($key, $filter[0]);
+                        $query->whereHas($prefix.$key, $filter[0]);
                     }
                     else if(strcmp($filter[1], FilterOperators::IN) === 0) {
-                        $query->whereIn($this->model->getTable().'.'.$key, explode(",", $filter[0]));
+                        $query->whereIn($prefix.$key, explode(",", $filter[0]));
                     }
                     else if(strcmp($filter[1], FilterOperators::NOT_IN) === 0) {
-                        $query->whereNotIn($this->model->getTable().'.'.$key, explode(",", $filter[0]));
+                        $query->whereNotIn($prefix.$key, explode(",", $filter[0]));
                     }
                     else {
-                        $query->where($this->model->getTable() . '.' . $key, $filter[1], $filter[0]);
+                        $query->where($prefix.$key, $filter[1], $filter[0]);
                     }
                 }
             }
@@ -447,10 +448,8 @@ class RestApiModelService implements ServiceInterface
                     array_push($mediaLinks, $mediaItem['link']);
                 }
             }
-            $result = new ServiceResult($this->model->getTable());
-//            return $result->status(404)->data($mediaIds, 'ids');
-            $mediaService->linkMediaAndMove($model, $mediaIds);
             $mediaService->linkMedia($model, $mediaLinks);
+            $mediaService->linkMediaAndMove($model, $mediaIds);
         }
     }
 
