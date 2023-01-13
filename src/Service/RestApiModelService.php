@@ -50,6 +50,7 @@ class RestApiModelService implements ServiceInterface
         $this->applyParamsOnQuery($baseQuery, $queryParam);
 //        $serviceResult->appendData($baseQuery->toSql(), 'sql');
 //        $serviceResult->appendData($baseQuery->getBindings(), 'params');
+        // $serviceResult->appendData($queryParam->getFilterFields(), 'filters');
         if($pagination)
         {
             $result = $baseQuery->paginate(
@@ -314,12 +315,12 @@ class RestApiModelService implements ServiceInterface
                 if(is_callable($filter[0]) && strcmp($filter[1], FilterOperators::CLOSURE) === 0) {
                     $query->where($filter[0]);
                 }
-                else if(Str::contains($key, '.'))
-                {
-                    $query->where($key, $filter[1], $filter[0]);
-                }
+                // else if(Str::contains($key, '.'))
+                // {
+                //     $query->where($key, $filter[1], $filter[0]);
+                // }
                 else{
-                    $prefix = str_contains($key, '.') ? '' : $this->model->getTable().'.';
+                    $prefix = Str::contains($key, '.') ? '' : $this->model->getTable().'.';
                     if(strcmp($filter[1], FilterOperators::IS_NULL) === 0) {
                         $query->whereNull($prefix.$key);
                     }
