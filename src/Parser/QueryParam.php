@@ -21,6 +21,7 @@ class QueryParam
     protected $data;
     protected $group;
     protected $with;
+    protected $random;
     protected $withCount;
     protected $distinct;
     protected $trashed;
@@ -46,6 +47,14 @@ class QueryParam
         $this->withCount = null;
         $this->distinct = null;
         $this->trashed = false;
+    }
+
+    public function random() {
+        $this->random = true;
+    }
+
+    public function isRandom() {
+        return $this->random !== null;
     }
 
     public function showTrashed() {

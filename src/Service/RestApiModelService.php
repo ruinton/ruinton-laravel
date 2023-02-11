@@ -365,6 +365,9 @@ class RestApiModelService implements ServiceInterface
             {
 //                $query->with($params->getWith());
             }
+            if ($params->isRandom()) {
+                $query->inRandomOrder();
+            }
             else if($params->hasSort())
             {
                 foreach ($params->getSort() as $sort)
