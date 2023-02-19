@@ -328,7 +328,7 @@ class RestApiModelService implements ServiceInterface
                         $query->whereNotNull($prefix.$key);
                     }
                     else if(strcmp($filter[1], FilterOperators::HAS) === 0) {
-                        $query->whereHas($prefix.$key, $filter[0]);
+                        $query->whereHas($key, $filter[0]);
                     }
                     else if(strcmp($filter[1], FilterOperators::IN) === 0) {
                         $query->whereIn($prefix.$key, explode(",", $filter[0]));
