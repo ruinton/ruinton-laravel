@@ -372,7 +372,11 @@ class RestApiModelService implements ServiceInterface
             {
                 foreach ($params->getSort() as $sort)
                 {
-                    $query->orderBy($sort[0], $sort[1]);
+                    if ($sort[1] === 'raw') {
+                        $query->orderByRaw($sort[0]);
+                    }else {
+                        $query->orderBy($sort[0], $sort[1]);
+                    }
                 }
             }
             else

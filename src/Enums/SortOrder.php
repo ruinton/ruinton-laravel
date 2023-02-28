@@ -8,4 +8,5 @@ final class SortOrder
 {
     public const ASCENDING = 'asc';
     public const DESCENDING = 'desc';
+    public const RAW = 'raw';
 }
