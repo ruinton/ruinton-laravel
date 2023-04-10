@@ -161,6 +161,19 @@ class QueryParam
         }
     }
 
+    public function removeSort($sortKey): void
+    {
+        if($this->hasSort($sortKey))
+        {
+            unset($this->sort[$sortKey]);
+        }
+    }
+
+    public function clearSort(): void
+    {
+        $this->sort = null;
+    }
+
     public function getFilter($filterKey)
     {
         return $this->filter[$filterKey];
