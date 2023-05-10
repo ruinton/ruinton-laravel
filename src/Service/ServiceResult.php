@@ -128,7 +128,7 @@ class ServiceResult
     }
 
     public function toJsonResponse() : JsonResponse {
-        return response()->json($this->toArray());
+        return response()->json($this->toArray(), $this->status);
     }
 
     public function reset()
