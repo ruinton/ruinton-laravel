@@ -4,7 +4,7 @@
 namespace Ruinton\Enums;
 
 
-final class MimeTypes
+final class OptimizeFormats
 {
     public const WEBP               = "webp";
     public const JPEG               = "jpeg";
