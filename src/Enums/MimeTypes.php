@@ -43,6 +43,8 @@ final class MimeTypes
     public const APPLICATION_ACCESSX    = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
     public const IMAGE_WEBP             = "image/webp";
+    public const IMAGE_HEIC             = "image/heic";
+    public const IMAGE_HEIF             = "image/heif";
 
     public final static function getIndexByName(string $mimeName)
     {

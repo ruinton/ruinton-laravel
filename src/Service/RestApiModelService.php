@@ -496,7 +496,18 @@ class RestApiModelService implements ServiceInterface
                 }
                 if (!in_array($file->getMimeType(), $mimeTypes)) continue;
             }
-            $media = $mediaService->createMedia($file, $mediaRules[$fieldKey]['type'], $this->model, $this->hasTenant ? Tenant::current()->id : 'base');
+            $media = $mediaService->createMedia(
+                $file,
+                $mediaRules[$fieldKey]['type'],
+                $this->model,
+                $this->hasTenant ? Tenant::current()->id : 'base',
+                $mediaRules[$fieldKey]['maxWidth'] ?? null,
+                $mediaRules[$fieldKey]['maxHeight'] ?? null,
+                $mediaRules[$fieldKey]['watermark'] ?? false,
+                $mediaRules[$fieldKey]['optimize'] ?? false,
+                $mediaRules[$fieldKey]['optimizeFormat'] ?? 'webp',
+                $mediaRules[$fieldKey]['compressionRatio'] ?? 80
+            );
             $serviceResult->appendData($media, $fieldKey);
         }
 

@@ -25,9 +25,10 @@ class MediaService
         $this->uploadHelper = $uploadHelper;
     }
 
-    public function createMedia(UploadedFile $file, $mediaType, Model $baseModel, $tenant = 'base')
+    public function createMedia(UploadedFile $file, $mediaType, Model $baseModel, $tenant = 'base', $maxWidth = null, $maxHeight = null, $watermark = false, $optimize = false, $optimizeFormat = 'webp', $compressionRatio = 80)
     {
         $modelName = strtolower($baseModel->getTable());
+        $clientFileName = $file->getClientOriginalName();
         $fileName = uniqid().'-'.$modelName.'.'.$file->extension();
         $storage_dir = '/public/'.$tenant.'/media/'.$modelName.'/temp/';
         $path = "app/public/$tenant/media/$modelName/temp/";
@@ -38,18 +39,65 @@ class MediaService
         if(!in_array($file->getMimeType(), $mimeTypeList)) {
             return false;
         }
+        $filePath = storage_path($path.$fileName);
+        if ($maxWidth !== null || $maxHeight !== null || $optimize || $watermark) {
+            $result = $this->optimizeFile($file, $filePath, $maxWidth, $maxHeight, $watermark, $optimizeFormat, $compressionRatio);
+            if ($result) {
+                $clientFileName = str_replace('.'.$file->extension(), '.'.$optimizeFormat, $clientFileName);
+                $fileName = str_replace('.'.$file->extension(), '.'.$optimizeFormat, $fileName);
+                $url = '/storage/'.$tenant.'/media/'.$modelName.'/temp/'.$fileName;
+                $filePath = storage_path($path.$fileName);
+            }
+        } else {
+            $file->storePubliclyAs($storage_dir, $fileName);
+        }
+        $fileSize = filesize($filePath);
         $result = $baseModel->media()->getRelated()::create([
             'media_type_id' => $mediaType,
-            'mime_type_id'  => MimeTypes::getIndexByName($file->getMimeType()),
-            'name'          => $file->getClientOriginalName(),
-            'size'          => $file->getSize(),
+            'mime_type_id'  => MimeTypes::getIndexByName(mime_content_type($filePath)),
+            'name'          => $clientFileName,
+            'size'          => $fileSize,
             'created_at'    => Carbon::now(),
             'path'          => $path.$fileName,
             'url'           => $url
         ]);
-        $this->updateStatistics($mediaType, +1, $file->getSize());
-        $file->storePubliclyAs($storage_dir, $fileName);
+        $this->updateStatistics($mediaType, +1, $fileSize);
         return $result;
+    }
+
+    public function optimizeFile(UploadedFile $file, $savePath, $maxWidth = null, $maxHeight = null, $watermark = false, $optimizeFormat = 'webp', $compressionRatio = 80) {
+        list($swidth, $sheight, $stype, $sattr) = getimagesize($file->getPathname());
+        $width = $swidth;
+        $height = $sheight;
+        if ($maxWidth && $maxWidth < $swidth) {
+            $width=$maxWidth;
+            $height=$sheight*($width/$swidth);
+        }
+        if ($maxHeight && $maxHeight < $sheight) {
+            $height=$maxHeight;
+            $width=$swidth*($height/$sheight);
+        }
+        if($file->getMimeType()==MimeTypes::IMAGE_PNG || $file->getMimeType()==MimeTypes::IMAGE_X_PNG){
+            $bg = imagecreatefrompng($file->getPathname());
+            $image = imagecreatetruecolor(imagesx($bg), imagesy($bg));
+            imagefill($image, 0, 0, imagecolorallocate($image, 255, 255, 255));
+            imagealphablending($image, TRUE);
+            imagecopy($image, $bg, 0, 0, 0, 0, imagesx($bg), imagesy($bg));
+            imagedestroy($bg);
+        }else if($file->getMimeType()==MimeTypes::IMAGE_JPEG){
+            $image = imagecreatefromjpeg($file->getPathname());
+        }else{
+            return false;
+        }
+        $tn = imagecreatetruecolor($width, $height);
+        imagecopyresampled($tn, $image, 0, 0, 0, 0, $width, $height, $swidth, $sheight);
+        $savePath = str_replace('.'.$file->extension(), '.'.$optimizeFormat, $savePath);
+        if ($optimizeFormat === 'webp') {
+            imagewebp($tn, $savePath, $compressionRatio);
+        } else {
+            imagejpeg($tn, $savePath, $compressionRatio);
+        }
+        return true;
     }
 
     public function deleteMedia($id, Model $relationModel)
