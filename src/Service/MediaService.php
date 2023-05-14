@@ -47,6 +47,8 @@ class MediaService
                 $fileName = str_replace('.'.$file->extension(), '.'.$optimizeFormat, $fileName);
                 $url = '/storage/'.$tenant.'/media/'.$modelName.'/temp/'.$fileName;
                 $filePath = storage_path($path.$fileName);
+            } else {
+                $file->storePubliclyAs($storage_dir, $fileName);
             }
         } else {
             $file->storePubliclyAs($storage_dir, $fileName);
