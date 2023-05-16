@@ -46,6 +46,8 @@ final class MimeTypes
     public const IMAGE_HEIC             = "image/heic";
     public const IMAGE_HEIF             = "image/heif";
 
+    public const MODEL_GLTF             = "application/json";
+
     public final static function getIndexByName(string $mimeName)
     {
         $mimeClass = new \ReflectionClass(MimeTypes::class);
