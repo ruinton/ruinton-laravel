@@ -26,7 +26,7 @@ interface ServiceInterface
 
     public function createMedia(array $files) : ServiceResult;
 
-    public function deleteMedia(int $id = 0) : ServiceResult;
+    public function deleteMedia($id = 0) : ServiceResult;
 
     public function swapPriority(int $fromId = 0, int $toId = 0) : ServiceResult;
 }

@@ -4,7 +4,6 @@ namespace Ruinton\Traits;
 
 use App\Models\TenantMedia;
 use Illuminate\Support\Str;
-use Ruinton\Models\Media;
 use Spatie\Multitenancy\Models\Tenant;
 
 trait HasMediaTenant
@@ -21,9 +20,11 @@ trait HasMediaTenant
     public function belongsToMedia($mediaType = null) {
         if($mediaType) {
             return $this->belongsToMany(TenantMedia::class, $this->mediaTableName(), null, 'media_id')
-                ->where('media.media_type_id', '=', $mediaType);
+                ->where($this->mediaTableName().'.media_type_id', '=', $mediaType)
+                ->withPivot(Str::singular($this->getTable()).'_id as model_id', 'media_type_id');
         }else {
-            return $this->belongsToMany(TenantMedia::class, $this->mediaTableName(), null, 'media_id');
+            return $this->belongsToMany(TenantMedia::class, $this->mediaTableName(), null, 'media_id')
+                ->withPivot(Str::singular($this->getTable()).'_id as model_id', 'media_type_id');
         }
     }
 }

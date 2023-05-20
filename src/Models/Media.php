@@ -39,6 +39,10 @@ class Media extends Model
         return url($value);
     }
 
+    public function setUrlAttribute($value) {
+        $this->attributes['url'] = str_replace(url('/'), '', $value);
+    }
+
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */

@@ -99,13 +99,52 @@ class MediaService
         } else {
             imagejpeg($tn, $savePath, $compressionRatio);
         }
+        imagedestroy($image);
+        imagedestroy($tn);
         return true;
     }
 
-    public function deleteMedia($id, Model $relationModel)
+    public function rotateFile($filePath, $degree) {
+        $mime = mime_content_type($filePath);
+
+        if($mime==MimeTypes::IMAGE_PNG || $mime==MimeTypes::IMAGE_X_PNG){
+            $bg = imagecreatefrompng($filePath);
+            $image = imagecreatetruecolor(imagesx($bg), imagesy($bg));
+            imagefill($image, 0, 0, imagecolorallocate($image, 255, 255, 255));
+            imagealphablending($image, TRUE);
+            imagecopy($image, $bg, 0, 0, 0, 0, imagesx($bg), imagesy($bg));
+            imagedestroy($bg);
+            $rotate = imagerotate($image, $degree, 0);
+            imagepng($image, $filePath, 0);
+        } else if($mime==MimeTypes::IMAGE_JPEG){
+            $image = imagecreatefromjpeg($filePath);
+            $rotate = imagerotate($image, $degree, 0);
+            imagejpeg($rotate, $filePath, 100);
+        } else if($mime==MimeTypes::IMAGE_WEBP) {
+            $image = imagecreatefromwebp($filePath);
+            $rotate = imagerotate($image, $degree, 0);
+            imagewebp($rotate, $filePath, 100);
+        } else if($mime==MimeTypes::IMAGE_GIF) {
+            $image = imagecreatefromgif($filePath);
+            $rotate = imagerotate($image, $degree, 0);
+            imagegif($rotate, $filePath);
+        } else {
+            return false;
+        }
+        imagedestroy($image);
+        imagedestroy($rotate);
+        return true;
+    }
+
+    public function deleteMedia($id, $mediaType, Model $relationModel)
     {
-        $this->unlinkMedia($id, $relationModel);
-        $media = $relationModel->media()->getRelated()::find($id);
+        $this->unlinkMedia($id, $mediaType, $relationModel);
+        if (str_contains($id, 'x')) {
+            $ids = explode('x', $id);
+            $media = $relationModel->media()->getRelated()::find(intval($ids[0]));
+        } else {
+            $media = $relationModel->media()->getRelated()::find(intval($id));
+        }
         if($media->delete())
         {
             /** @var Media $media */
@@ -115,29 +154,40 @@ class MediaService
         return $media;
     }
 
-    public function linkMedia(Model $baseModel, $mediaIds)
+    public function linkMedia(Model $baseModel, $mediaLinks)
     {
-        $result = $baseModel->media()->syncWithoutDetaching($mediaIds);
+        // $result = $baseModel->media()->syncWithoutDetaching($mediaIds);
+        $mediaLinkList = [];
+        foreach($mediaLinks as $key => $id) {
+            array_push($mediaLinkList, [
+                'media_id' => $key,
+                'media_type_id' => $id['media_type_id']
+            ]);
+        }
+        $result = $baseModel->media()->syncWithoutDetaching($mediaLinkList);
         return $result;
     }
 
-    public function linkMediaAndMove(Model $baseModel, $mediaIds)
+    public function linkMediaAndMove(Model $baseModel, $mediaLinks)
     {
-        $result = $baseModel->media()->syncWithoutDetaching($mediaIds);
-//        $newModel = $relationModel->replicate();
-//        $newModel->fill([
-//            'media_id' => $mediaId,
-//            $baseModel->getTable().'_id' => $id
-//        ]);
-//        $result = $newModel->save();
+        $mediaLinkList = [];
+        foreach($mediaLinks as $key => $id) {
+            array_push($mediaLinkList, [
+                'media_id' => $key,
+                'media_type_id' => $id['media_type_id']
+            ]);
+        }
+        $result = $baseModel->media()->syncWithoutDetaching($mediaLinkList);
+
+        $mediaIds = array_keys($mediaLinks);
         $mediaList = $baseModel->media()->getRelated()::query()->whereIn('id', $mediaIds)->get();
         foreach ($mediaList as $media) {
-            $newPath = storage_path(str_replace('temp', $baseModel[$baseModel->getKeyName()], $media->path));
+            $newPath = str_replace('temp', $baseModel[$baseModel->getKeyName()], $media->path);
             $directory = storage_path(explode("temp", $media->path)[0] . $baseModel[$baseModel->getKeyName()]);
             if(!File::isDirectory($directory)) {
                 File::makeDirectory($directory, 0755, true);
             }
-            File::move(storage_path($media->path), $newPath);
+            File::move(storage_path($media->path), storage_path($newPath));
             $media->url = str_replace('temp', $baseModel[$baseModel->getKeyName()], $media->url);
             $media->path = $newPath;
             $media->save();
@@ -153,14 +203,24 @@ class MediaService
         return $result;
     }
 
-    public function unlinkMedia($id, ?Model $model)
+    public function unlinkMedia($id, $mediaType, ?Model $model)
     {
         if($model != null)
         {
-            $tableName = $model->getConnection()->getDatabaseName() .'.'.Str::singular($model->getTable()).'_media';
-            DB::table($tableName)
-                ->where('media_id', '=', $id)
-                ->delete();
+            if (str_contains($id, 'x')) {
+                $ids = explode('x', $id);
+                $tableName = $model->getConnection()->getDatabaseName() .'.'.Str::singular($model->getTable()).'_media';
+                DB::table($tableName)
+                    ->where('media_id', '=', intval($ids[0]))
+                    ->where(Str::singular($model->getTable()).'_id', '=', intval($ids[1]))
+                    ->where('media_type_id', '=', $mediaType)
+                    ->delete();
+            }else {
+                $tableName = $model->getConnection()->getDatabaseName() .'.'.Str::singular($model->getTable()).'_media';
+                DB::table($tableName)
+                    ->where('media_id', '=', intval($id))
+                    ->delete();
+            }
         }
     }
 
@@ -179,7 +239,7 @@ class MediaService
         }
     }
 
-    protected function updateStatistics(int $mimeTypeIndex, int $countEffect, int $sizeEffect)
+    public function updateStatistics(int $mimeTypeIndex, int $countEffect, int $sizeEffect)
     {
         $query = MediaType::query();
         $mediaType = $query->where('id', '=', $mimeTypeIndex)->first();

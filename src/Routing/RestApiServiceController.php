@@ -268,7 +268,7 @@ class RestApiServiceController extends RuintonController
         }
         else
         {
-            return $this->service->deleteMedia(intval($id))->toJsonResponse();
+            return $this->service->deleteMedia($id)->toJsonResponse();
         }
     }
 }

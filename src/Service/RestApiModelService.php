@@ -3,6 +3,7 @@
 
 namespace Ruinton\Service;
 
+use App\Models\TenantMedia;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\App;
@@ -438,7 +439,8 @@ class RestApiModelService implements ServiceInterface
         if(!isset($this->model['media'])) return;
         /** @var MediaService $mediaService */
         $mediaService = App::make(MediaService::class);
-        $mediaFields = array_keys($this->getMediaRules());
+        $mediaRules = $this->getMediaRules();
+        $mediaFields = array_keys($mediaRules);
         foreach ($data as $key => $media) {
             if(!$this->isMedia($media, $key, $mediaFields)) continue;
             $mediaList = [];
@@ -451,9 +453,15 @@ class RestApiModelService implements ServiceInterface
             $mediaLinks = [];
             foreach ($mediaList as $mediaItem) {
                 if (isset($mediaItem['id'])) {
-                    array_push($mediaIds, $mediaItem['id']);
+                    $mediaIds[$mediaItem['id']] = [
+                        'media_type_id' => $mediaRules[$key]['type']
+                    ];
+                    // array_push($mediaIds, $mediaItem['id']);
                 } else if (isset($mediaItem['link'])) {
-                    array_push($mediaLinks, $mediaItem['link']);
+                    $mediaLinks[$mediaItem['link']] = [
+                        'media_type_id' => $mediaRules[$key]['type']
+                    ];
+                    // array_push($mediaLinks, $mediaItem['link']);
                 }
             }
             $mediaService->linkMedia($model, $mediaLinks);
@@ -496,19 +504,30 @@ class RestApiModelService implements ServiceInterface
                 }
                 if (!in_array($file->getMimeType(), $mimeTypes)) continue;
             }
-            $media = $mediaService->createMedia(
-                $file,
-                $mediaRules[$fieldKey]['type'],
-                $this->model,
-                $this->hasTenant ? Tenant::current()->id : 'base',
-                $mediaRules[$fieldKey]['maxWidth'] ?? null,
-                $mediaRules[$fieldKey]['maxHeight'] ?? null,
-                $mediaRules[$fieldKey]['watermark'] ?? false,
-                $mediaRules[$fieldKey]['optimize'] ?? false,
-                $mediaRules[$fieldKey]['optimizeFormat'] ?? 'webp',
-                $mediaRules[$fieldKey]['compressionRatio'] ?? 80
-            );
-            $serviceResult->appendData($media, $fieldKey);
+            $cloneId = null;
+            if (str_contains($key, '@clone')) {
+                $cloneId = intval(explode('@clone', $key)[1]);
+            }
+            if ($cloneId) {
+                $cloneMedia = TenantMedia::find($cloneId);
+                if ($cloneMedia) {
+                    $serviceResult->appendData($cloneMedia, $fieldKey);
+                }
+            } else {
+                $media = $mediaService->createMedia(
+                    $file,
+                    $mediaRules[$fieldKey]['type'],
+                    $this->model,
+                    $this->hasTenant ? Tenant::current()->id : 'base',
+                    $mediaRules[$fieldKey]['maxWidth'] ?? null,
+                    $mediaRules[$fieldKey]['maxHeight'] ?? null,
+                    $mediaRules[$fieldKey]['watermark'] ?? false,
+                    $mediaRules[$fieldKey]['optimize'] ?? false,
+                    $mediaRules[$fieldKey]['optimizeFormat'] ?? 'webp',
+                    $mediaRules[$fieldKey]['compressionRatio'] ?? 80
+                );
+                $serviceResult->appendData($media, $fieldKey);
+            }
         }
 
         $serviceResult->status(200)->message('Media uploaded')->data($serviceResult->getData(),
@@ -517,19 +536,29 @@ class RestApiModelService implements ServiceInterface
     }
 
 
-    public function deleteMedia(int $id = 0) : ServiceResult
+    public function deleteMedia($id = 0) : ServiceResult
     {
         /** @var MediaService $mediaService */
         $mediaService = App::make(MediaService::class);
         $serviceResult = new ServiceResult($this->model->getTable());
+        if(str_contains($id, 'x')) {
+            $fieldKey = explode('x', $id)[2];
+            $mediaRules = $this->getMediaRules();
+            if(in_array($fieldKey, array_keys($mediaRules))) {
+                $mediaType = $mediaRules[$fieldKey]['type'];
+                try {
+                    $model = $mediaService->deleteMedia($id, $mediaType, $this->model);
+                    $serviceResult->status(200)->message('Media deleted')->data($model, $this->model->getTable());
+                    return $serviceResult;
+                } catch(\Exception $e) {}
+            }
+        }
         try {
-            $model = $mediaService->deleteMedia($id, $this->model);
+            $model = $mediaService->deleteMedia($id, null, $this->model);
             $serviceResult->status(200)->message('Media deleted')->data($model, $this->model->getTable());
         }
-        catch (\Exception $e)
-        {
-            $serviceResult->status(402)->message('unknown error')->error($e->getMessage(), 'service');
-        }
+        catch (\Exception $e) {}
+        $serviceResult->status(402)->message('unknown error')->error($e->getMessage(), 'service');
         return $serviceResult;
     }
 
