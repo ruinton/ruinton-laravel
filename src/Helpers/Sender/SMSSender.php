@@ -81,6 +81,7 @@ class SMSSender
                 CURLOPT_MAXREDIRS => 10,
                 CURLOPT_FOLLOWLOCATION => 1,
                 CURLOPT_TIMEOUT => 30,
+                CURLOPT_HTTPAUTH => CURLAUTH_ANY,
                 CURLOPT_SSL_VERIFYHOST => false,
                 CURLOPT_SSL_VERIFYPEER => false,
                 CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
@@ -96,7 +97,7 @@ class SMSSender
         );
         $response = curl_exec($curl);
         $err = curl_error($curl);
-        // curl_close($curl);
+        curl_close($curl);
         if ($err) {
             echo "cURL Error #:" . $err;
         } else {
