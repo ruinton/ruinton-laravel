@@ -75,7 +75,7 @@ class SMSSender
 
         curl_setopt_array($curl,
             array(
-                CURLOPT_URL => "https://api.ghasedak.me/v2/verification/send/simple ",
+                CURLOPT_URL => "https://api.ghasedak.me/v2/verification/send/simple",
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_ENCODING => "",
                 CURLOPT_MAXREDIRS => 10,
