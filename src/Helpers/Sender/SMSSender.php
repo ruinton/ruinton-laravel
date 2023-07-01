@@ -3,6 +3,7 @@
 
 namespace Ruinton\Helpers\Sender;
 
+use Exception;
 
 class SMSSender
 {
@@ -98,9 +99,11 @@ class SMSSender
             echo "cURL Error #:" . $err;
         } else {
             $response = json_decode($response, true);
-            if($response['result']['code'] === 200) {
-                return true;
-            }
+            try {
+                if($response['result']['code'] === 200) {
+                    return true;
+                }
+            } catch(Exception $e) {}
         }
         return false;
     }
