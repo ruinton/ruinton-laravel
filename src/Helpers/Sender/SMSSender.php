@@ -71,16 +71,18 @@ class SMSSender
         foreach ($params as $key => $param) {
             $paramString .= '&param'.($key+2).'='.(str_replace (' ', ' ', $param));
         }
-        $token = str_replace ( ' ', ' ', $token);
+        $token = str_replace ( ' ', '،', $token);
+
         curl_setopt_array($curl,
             array(
                 CURLOPT_URL => "https://api.ghasedak.me/v2/verification/send/simple ",
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_ENCODING => "",
                 CURLOPT_MAXREDIRS => 10,
+                CURLOPT_FOLLOWLOCATION => 1,
                 CURLOPT_TIMEOUT => 30,
-                CURLOPT_SSL_VERIFYHOST => false,
-                CURLOPT_SSL_VERIFYPEER => false,
+                // CURLOPT_SSL_VERIFYHOST => false,
+                // CURLOPT_SSL_VERIFYPEER => false,
                 CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
 //                CURLOPT_HTTPS_VERSION => CURL_https_VERSION_1_1,
                 CURLOPT_CUSTOMREQUEST => "POST",
@@ -118,6 +120,7 @@ class SMSSender
                 CURLOPT_ENCODING => "",
                 CURLOPT_MAXREDIRS => 10,
                 CURLOPT_TIMEOUT => 30,
+                CURLOPT_FOLLOWLOCATION => 1,
                 CURLOPT_SSL_VERIFYHOST => false,
                 CURLOPT_SSL_VERIFYPEER => false,
                 CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
