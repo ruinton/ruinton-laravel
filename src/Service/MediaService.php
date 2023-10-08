@@ -94,6 +94,7 @@ class MediaService
         $tn = imagecreatetruecolor($width, $height);
         imagecopyresampled($tn, $image, 0, 0, 0, 0, $width, $height, $swidth, $sheight);
         $savePath = str_replace('.'.$file->extension(), '.'.$optimizeFormat, $savePath);
+        File::makeDirectory(explode('.'.$optimizeFormat, $savePath)[0], 0777, true, true);
         if ($optimizeFormat === 'webp') {
             imagewebp($tn, $savePath, $compressionRatio);
         } else {
