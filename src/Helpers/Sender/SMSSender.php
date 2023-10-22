@@ -119,7 +119,7 @@ class SMSSender
         $curl = curl_init();
         curl_setopt_array($curl,
             array(
-                CURLOPT_URL => "https://api.ghasedak.me/v2/sms/send/simple ",
+                CURLOPT_URL => "https://api.ghasedak.me/v2/sms/send/simple",
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_ENCODING => "",
                 CURLOPT_MAXREDIRS => 10,
