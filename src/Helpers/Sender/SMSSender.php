@@ -143,20 +143,20 @@ class SMSSender
         $err = curl_error($curl);
         curl_close($curl);
         if ($err) {
-            print_r($err);
+            print($err);
             echo "cURL Error #:" . $err;
         } else {
-            print_r($response);
+            print($response);
             $response = json_decode($response, true);
             try {
                 if($response['result']['code'] === 200) {
-                    return true;
+                    return $response;
                 }
             } catch(Exception $e) {
                 return $response;
             }
         }
-        return false;
+        return $response;
     }
 
     public function sendVoiceWithGhasedakIO($receptor, $message)
