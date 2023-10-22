@@ -71,17 +71,14 @@ class SMSSender
         foreach ($params as $key => $param) {
             $paramString .= '&param'.($key+2).'='.(str_replace (' ', ' ', $param));
         }
-        $token = str_replace ( ' ', '،', $token);
-
+        $token = str_replace ( ' ', ' ', $token);
         curl_setopt_array($curl,
             array(
-                CURLOPT_URL => "https://api.ghasedak.me/v2/verification/send/simple",
+                CURLOPT_URL => "https://api.ghasedak.me/v2/verification/send/simple ",
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_ENCODING => "",
                 CURLOPT_MAXREDIRS => 10,
-                CURLOPT_FOLLOWLOCATION => 1,
                 CURLOPT_TIMEOUT => 30,
-                CURLOPT_HTTPAUTH => CURLAUTH_ANY,
                 CURLOPT_SSL_VERIFYHOST => false,
                 CURLOPT_SSL_VERIFYPEER => false,
                 CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
@@ -102,13 +99,50 @@ class SMSSender
             echo "cURL Error #:" . $err;
         } else {
             $response = json_decode($response, true);
-            try {
+            // try {
                 if($response['result']['code'] === 200) {
                     return true;
                 }
-            } catch(Exception $e) {
-                return $response;
-            }
+            // } catch(Exception $e) {}
+        }
+        return false;
+    }
+
+    public function sendSimpleSMSWithGhasedakIO($receptor, $lineNumber, $message, $id)
+    {
+        $curl = curl_init();
+        curl_setopt_array($curl,
+            array(
+                CURLOPT_URL => "https://api.ghasedak.me/v2/sms/send/simple ",
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_ENCODING => "",
+                CURLOPT_MAXREDIRS => 10,
+                CURLOPT_TIMEOUT => 30,
+                CURLOPT_SSL_VERIFYHOST => false,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+//                CURLOPT_HTTPS_VERSION => CURL_https_VERSION_1_1,
+                CURLOPT_CUSTOMREQUEST => "POST",
+                CURLOPT_POSTFIELDS => "message=$message&receptor=$receptor&linenumber=".$lineNumber."&checkid=".$id,
+                CURLOPT_HTTPHEADER => array(
+                    "apikey: ".$this->apiKey,
+                    "cache-control: no-cache",
+                    "content-type: application/x-www-form-urlencoded",
+                )
+            )
+        );
+        $response = curl_exec($curl);
+        $err = curl_error($curl);
+        curl_close($curl);
+        if ($err) {
+            echo "cURL Error #:" . $err;
+        } else {
+            $response = json_decode($response, true);
+            // try {
+                if($response['result']['code'] === 200) {
+                    return true;
+                }
+            // } catch(Exception $e) {}
         }
         return false;
     }
@@ -123,7 +157,6 @@ class SMSSender
                 CURLOPT_ENCODING => "",
                 CURLOPT_MAXREDIRS => 10,
                 CURLOPT_TIMEOUT => 30,
-                CURLOPT_FOLLOWLOCATION => 1,
                 CURLOPT_SSL_VERIFYHOST => false,
                 CURLOPT_SSL_VERIFYPEER => false,
                 CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
