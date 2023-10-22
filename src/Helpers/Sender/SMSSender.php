@@ -137,13 +137,13 @@ class SMSSender
         if ($err) {
             echo "cURL Error #:" . $err;
         } else {
+            print_r($response);
             $response = json_decode($response, true);
-            // try {
-                print_r($response);
+            try {
                 if($response['result']['code'] === 200) {
                     return true;
                 }
-            // } catch(Exception $e) {}
+            } catch(Exception $e) {}
         }
         return false;
     }
