@@ -13,7 +13,7 @@ class SMSSender
 
     public function __construct()
     {
-        $this->apiKey = env('SMS_API_KEY', '');
+        $this->apiKey = config('sms.api_key', '');
     }
 
     public function setTemplate($templateName)
