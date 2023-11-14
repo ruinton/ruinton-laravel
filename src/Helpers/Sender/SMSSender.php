@@ -109,6 +109,7 @@ class SMSSender
                     return true;
                 }
             } catch(Exception $e) {
+                Log::error(json_encode([$response, $this->apiKey]));
                 return $response;
             }
         }
@@ -147,12 +148,12 @@ class SMSSender
             echo "cURL Error #:" . $err;
         } else {
             $response = json_decode($response, true);
-            print_r([$response, $this->apiKey]);
             try {
                 if($response['result']['code'] === 200) {
                     return true;
                 }
             } catch(Exception $e) {
+                Log::error(json_encode([$response, $this->apiKey]));
                 return $response;
             }
         }
