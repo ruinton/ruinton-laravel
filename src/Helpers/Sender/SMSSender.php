@@ -4,6 +4,7 @@
 namespace Ruinton\Helpers\Sender;
 
 use Exception;
+use Illuminate\Support\Facades\Log;
 
 class SMSSender
 {
@@ -151,6 +152,7 @@ class SMSSender
                     return true;
                 }
             } catch(Exception $e) {
+                Log::error(json_encode([$response, $this->apiKey]));
                 return $response;
             }
         }
