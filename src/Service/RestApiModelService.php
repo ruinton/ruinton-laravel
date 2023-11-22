@@ -1,575 +1,274 @@
 <?php
 
 
-namespace Ruinton\Service;
+namespace Ruinton\Routing;
 
-use App\Models\TenantMedia;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\App;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
-use Ruinton\Enums\FilterOperators;
-use Ruinton\Parser\QueryParam;
-use Ruinton\Traits\DefaultEventListener;
-use Spatie\Multitenancy\Models\Tenant;
 
-class RestApiModelService implements ServiceInterface
+use Illuminate\Http\Request;
+use Ruinton\Service\ServiceInterface;
+use Ruinton\Service\ServiceResult;
+
+class RestApiServiceController extends RuintonController
 {
-    use DefaultEventListener;
+    protected ServiceInterface $service;
 
-    protected Model $model;
-    protected bool $hasTenant = true;
-
-    public function __construct(Model $model)
+    public function __construct(ServiceInterface $service)
     {
-        $this->model = $model;
+        $this->service = $service;
     }
 
-    public function getOrCreateParams(?QueryParam $params) {
-        if($params) {
-            return $params;
-        }else {
-            return new QueryParam();
+    /**
+     * Display a listing of the resource.
+     *
+     * @param Request $request
+     * @param bool $pagination
+     */
+    public function index(Request $request, bool $pagination = true)
+    {
+        if($request->query('export', null) !== null) {
+            $queryParam = $this->getQueryParams($request);
+            $queryParam->setPageSize(10000);
+            $queryParam->setPageNumber(1);
+            $result = $this->service->all($queryParam, $pagination);
+            return $this->exportCsv($request, $result);
         }
+        return $this->indexAction($request, $pagination)->toJsonResponse();
     }
 
-    public function getModelName() : string
+    protected function indexAction(Request $request, bool $pagination = true) : ServiceResult
     {
-        return Str::singular($this->model->getTable());
+        $params = $this->getQueryParams($request);
+        return $this->service->all($params, $pagination);
     }
 
-    public function getTableName() : string
+    protected function exportCsv(Request $request, ServiceResult $result)
     {
-        return $this->model->getTable();
+        $fileName = 'workshop-users.csv';
+
+        $headers = array(
+            "Content-type"        => "text/csv",
+            "Content-Disposition" => "attachment; filename=$fileName",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        );
+
+        $models = $result->getDataAsModelList();
+        $columns = array_keys($models[0]->attributesToArray());
+
+        $callback = function() use($models, $columns) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, $columns);
+
+            foreach ($models as $model) {
+                $model = $model->attributesToArray();
+                $row = [];
+                foreach ($columns as $column) {
+                    $row[$column] = $model[$column];
+                }
+                fputcsv($file, $row);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 
-    public function all(?QueryParam $queryParam = null, bool $pagination = true) : ServiceResult
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request|array  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function store(Request $request)
     {
-        $serviceResult = new ServiceResult($this->model->getTable());
-        $baseQuery = $this->model->newQuery();
-        $this->applyParamsOnQuery($baseQuery, $queryParam);
-//        $serviceResult->appendData($baseQuery->toSql(), 'sql');
-//        $serviceResult->appendData($baseQuery->getBindings(), 'params');
-        // $serviceResult->appendData($queryParam->getFilterFields(), 'filters');
-        if($pagination)
+        $data = $this->getJsonRequest($request);
+        if(empty($data))
         {
-            $result = $baseQuery->paginate(
-                $queryParam->getPageSize(),
-                $queryParam->getColumns(),
-                'page',
-                $queryParam->getPageNumber()
-            );
-            $serviceResult->appendData($result->items(), $this->model->getTable())
-                ->meta([
-                    'page' => [
-                        'first_item'        => $result->firstItem(),
-                        'last_item'         => $result->lastItem(),
-                        'total_items'       => $result->total(),
-                        'current_page'      => $result->currentPage(),
-                        'last_page'         => $result->lastPage(),
-                        'per_page'          => $result->perPage(),
-                    ]
-                ]);
+            return $this->generateResponse(504, 'Input error', 'no data found in request')->toJsonResponse();
+        }
+        return $this->storeAction($request, $data)->toJsonResponse();
+    }
+
+    protected function storeAction(Request $request, $data) : ServiceResult
+    {
+        return $this->service->create($data);
+    }
+
+    /**
+     * Display the specified resource.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function show(Request $request, $id)
+    {
+        return $this->showAction($request, $id)->toJsonResponse();
+    }
+
+    protected function showAction(Request $request, $id) : ServiceResult
+    {
+        return $this->service->find($id, $this->getQueryParams($request));
+    }
+
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function update(Request $request, $id)
+    {
+        $data = $this->getJsonRequest($request);
+        if(intval($id) < 1)
+        {
+            return $this->generateResponse(402, 'Input error', 'selected id is not in range')->toJsonResponse();
+        }
+        if(empty($data))
+        {
+            return $this->generateResponse(504, 'Input error', 'no data found in request')->toJsonResponse();
+        }
+        return $this->updateAction($request, $id, $data)->toJsonResponse();
+    }
+
+    protected function updateAction(Request $request, $id, $data) : ServiceResult
+    {
+        return $this->service->update(intval($id), $data);
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function destroy(Request $request, $id)
+    {
+        if(intval($id) < 1)
+        {
+            return $this->generateResponse(402, 'Input error', 'selected id is not in range')->toJsonResponse();
+        }
+        return $this->destroyAction($request, $id)->toJsonResponse();
+    }
+
+    protected function destroyAction(Request $request, $id) : ServiceResult
+    {
+        return $this->service->delete(intval($id));
+    }
+
+    /**
+     * Swap priorities
+     */
+    public function swapPriority(Request $request, $fromId, $toId)
+    {
+        if(intval($fromId) < 1)
+        {
+            return $this->generateResponse(404, 'Input error', 'selected from model id is not in range')->toJsonResponse();
+        }
+        if(intval($toId) < 1)
+        {
+            return $this->generateResponse(404, 'Input error', 'selected to model id is not in range')->toJsonResponse();
+        }
+        return $this->service->swapPriority($fromId, $toId)->toJsonResponse();
+    }
+
+    /**
+     * Update a list of resources in storage.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function bulkUpdate(Request $request)
+    {
+        $data = $this->getJsonRequest($request);
+        if(empty($data))
+        {
+            return $this->generateResponse(504, 'Input error', 'no data found in request')->toJsonResponse();
+        }
+        return $this->bulkUpdateAction($request, $data)->toJsonResponse();
+    }
+
+    protected function bulkUpdateAction(Request $request, $data) : ServiceResult
+    {
+        return $this->service->bulkUpdate($data);
+    }
+
+    /**
+     * Update a list of resources in storage.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function bulkUpdateOrInsert(Request $request)
+    {
+        $data = $this->getJsonRequest($request);
+        if(empty($data))
+        {
+            return $this->generateResponse(504, 'Input error', 'no data found in request')->toJsonResponse();
+        }
+        return $this->bulkUpdateOrInsertAction($request, $data)->toJsonResponse();
+    }
+
+    protected function bulkUpdateOrInsertAction(Request $request, $data) : ServiceResult
+    {
+        return $this->service->bulkUpdateOrInsert($data);
+    }
+
+    /**
+     * Remove a list of resources from storage.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function bulkDelete(Request $request)
+    {
+        $data = $this->getJsonRequest($request);
+        if(empty($data))
+        {
+            return $this->generateResponse(504, 'Input error', 'no data found in request')->toJsonResponse();
+        }
+        return $this->bulkDeleteAction($request, $data)->toJsonResponse();
+    }
+
+    protected function bulkDeleteAction(Request $request, $data) : ServiceResult
+    {
+        return $this->service->bulkDelete($data);
+    }
+
+    public function uploadMedia(Request $request)
+    {
+        $files = $request->allFiles();
+        return $this->uploadMediaAction($request, $files);
+    }
+
+    protected function uploadMediaAction(Request $request, array $files)
+    {
+        if(empty($files))
+        {
+            return $this->generateResponse(504, 'Input error', 'no file found in request')->toJsonResponse();
         }
         else
         {
-            $result = $baseQuery->get();
-            $serviceResult->data($result, $this->model->getTable());
+            return $this->service->createMedia($files)->toJsonResponse();
         }
-        return $serviceResult;
     }
 
-    public function find($id = null, ?QueryParam $queryParam = null): ServiceResult
+    public function deleteMedia(Request $request, $id)
     {
-        $serviceResult = new ServiceResult($this->model->getTable());
-        try
+        return $this->deleteMediaAction($request, $id);
+    }
+
+    protected function deleteMediaAction($request, $id)
+    {
+        if(intval($id) < 1)
         {
-            $baseQuery = $this->model->newQuery();
-            $this->applyParamsOnQuery($baseQuery, $queryParam);
-            if($id != null)
-            {
-                $baseQuery->where($this->model->getTable().'.'.$this->model->getKeyName(), $id);
-            }
-            $model = $baseQuery->first();
-            if($model)
-            {
-                $serviceResult->appendData($model, Str::snake(class_basename($this->model)));
-            }
-            else
-            {
-                $serviceResult->status(404)->message('cannot find '.class_basename($this->model))
-                    ->error('model not exists', 'data');
-            }
+            return $this->generateResponse(504, 'Input error', 'selected id is not in range')->toJsonResponse();
         }
-        catch (\Exception $e)
+        else
         {
-            $serviceResult->status(500)->message('unknown error')->error($e->getMessage(), 'service');
+            return $this->service->deleteMedia($id)->toJsonResponse();
         }
-        return $serviceResult;
-    }
-
-    public function create(array $data, ?QueryParam $queryParam = null): ServiceResult
-    {
-        $serviceResult = new ServiceResult($this->model->getTable());
-        try
-        {
-            $newModel = $this->model->replicate();
-            $newModel->fill($data);
-            $this->beforeCreate($newModel, $queryParam, $data);
-//            $newModel->created_at = Carbon::now()->formatDatetime();
-            if($newModel->save())
-            {
-                $this->linkMediaFields($data, $newModel);
-                $this->afterCreate($newModel, $queryParam, $data);
-                $serviceResult->status(200)->message(class_basename($this->model).' created successfully');
-                if($queryParam != null)
-                {
-                    $serviceResult->data(
-                        ($queryParam->hasColumns()) ? $newModel : $newModel->setVisible($queryParam->getColumns()),
-                        Str::snake(class_basename($this->model)));
-                }else{
-                    $serviceResult->data(
-                        ($newModel),
-                        Str::snake(class_basename($this->model)));
-                }
-            }
-            else
-            {
-                $serviceResult->status(500)->message('cannot create '.class_basename($this->model));
-            }
-        }
-        catch (\Exception $e)
-        {
-            $serviceResult->status(500)->message('unknown error')->error($e->getMessage(), 'service');
-        }
-        return $serviceResult;
-    }
-
-    public function update($id, array $data, ?QueryParam $queryParam = null): ServiceResult
-    {
-        $serviceResult = new ServiceResult($this->model->getTable());
-        try
-        {
-            $query = $this->model::query();
-            $this->applyParamsOnQuery($query, $queryParam);
-            if($id != null)
-            {
-                $query->where($this->model->getTable().'.'.$this->model->getKeyName(), $id);
-            }
-            /** @var Model $updateModel */
-            $updateModel = $query->first();
-            if($updateModel)
-            {
-                $updateModel->fill($data);
-                $this->linkMediaFields($data, $updateModel);
-                $this->beforeUpdate($updateModel, $queryParam, $id, $data);
-//                $updateModel->updated_at = Carbon::now()->formatDatetime();
-                if($updateModel->save())
-                {
-                    $this->afterUpdate($updateModel, $queryParam, $id, $data);
-                    $serviceResult->status(200)->message(class_basename($this->model).' updated successfully')
-                        ->appendData($updateModel,
-                            Str::snake(class_basename($this->model)));
-                }
-                else
-                {
-                    $serviceResult->status(500)->message('cannot update '.class_basename($this->model));
-                }
-            }
-            else
-            {
-                $serviceResult->status(404)->message('cannot update '.class_basename($this->model))
-                    ->error('model not exists', 'data');
-            }
-        }
-        catch (\Exception $e)
-        {
-            $serviceResult->status(500)->message('unknown error')->error($e->getMessage(), 'service');
-        }
-        return $serviceResult;
-    }
-
-    public function delete($id, ?QueryParam $queryParam = null) : ServiceResult
-    {
-        $serviceResult = new ServiceResult($this->model->getTable());
-        try
-        {
-            $query = $this->model::query();
-            $this->applyParamsOnQuery($query, $queryParam);
-            if($id !== null) {
-                $query->where($this->model->getTable() . '.' . $this->model->getKeyName(), $id);
-            }
-            /** @var Model $deleteModel */
-            $deleteModel = $query->first();
-            if($deleteModel)
-            {
-                $this->deleteLinkedMedia($id);
-                $this->beforeDelete($deleteModel, $queryParam, $id);
-                if($deleteModel->delete())
-                {
-                    $this->afterDelete($deleteModel, $queryParam, $id);
-                    $serviceResult->status(200)->message(class_basename($this->model).' deleted successfully')
-                        ->data($deleteModel,
-                            Str::snake(class_basename($this->model)));
-                }
-                else
-                {
-                    $serviceResult->status(500)->message('cannot delete '.class_basename($this->model));
-                }
-            }
-            else
-            {
-                $serviceResult->status(404)->message('cannot delete '.class_basename($this->model))
-                    ->error('model not exists', 'data');
-            }
-        }
-        catch (\Exception $e)
-        {
-            $serviceResult->status(500)->message('unknown error')->error($e->getMessage(), 'service');
-        }
-        return $serviceResult;
-    }
-
-    public function bulkUpdate(array $data) : ServiceResult
-    {
-        $serviceResult = new ServiceResult($this->model->getTable());
-        if(is_array($this->model->getKeyName())) {
-            DB::transaction(function () use ($data) {
-                foreach ($data as $row)
-                {
-                    $query = DB::table($this->model->getTable());
-                    foreach ($this->model->getKeyName() as $key) {
-                        $query->where($this->model->getTable().'.'.$key,
-                            '=',
-                            $row[$key]);
-                    }
-                    $query->update($row);
-                }
-            });
-        }else {
-            DB::transaction(function () use ($data) {
-                foreach ($data as $row)
-                {
-                    DB::table($this->model->getTable())
-                        ->where($this->model->getTable().'.'.$this->model->getKeyName(),
-                            '=',
-                            $row[$this->model->getKeyName()])
-                        ->update($row);
-                }
-            });
-        }
-
-        return $serviceResult->status(200)->message('records updated');
-    }
-
-    public function bulkUpdateOrInsert(array $data) : ServiceResult
-    {
-        $serviceResult = new ServiceResult($this->model->getTable());
-        if(is_array($this->model->getKeyName())) {
-            DB::transaction(function () use ($data) {
-                foreach ($data as $row)
-                {
-                    $attributes = [];
-                    $query = DB::table($this->model->getTable());
-                    foreach ($this->model->getKeyName() as $key) {
-                        $query->where($this->model->getTable().'.'.$key,
-                            '=',
-                            $row[$key]);
-                        $attributes[$key] = $row[$key];
-                    }
-                    $query->updateOrInsert($attributes, $row);
-                }
-            });
-        }else {
-            DB::transaction(function () use ($data) {
-                foreach ($data as $row)
-                {
-                    DB::table($this->model->getTable())
-                        ->where($this->model->getTable().'.'.$this->model->getKeyName(),
-                            '=',
-                            $row[$this->model->getKeyName()])
-                        ->updateOrInsert($row);
-                }
-            });
-        }
-
-        return $serviceResult->status(200)->message('records updated');
-    }
-
-    public function bulkDelete(array $data) : ServiceResult
-    {
-        $serviceResult = new ServiceResult($this->model->getTable());
-        $ids = implode(', ', $data);
-        DB::table($this->model->getTable())
-            ->whereIn($this->model->getTable().'.'.$this->model->getKeyName(), $ids)
-            ->delete();
-        return $serviceResult->status(200)->message('records deleted');
-    }
-
-    protected function applyParamsOnQuery(Builder $query, ?QueryParam $params) {
-        if($params) {
-            if ($params->hasColumns()) {
-                $query->select($params->getColumns());
-            }
-            foreach ($params->getFilterFields() as $key => $filter) {
-                if(is_callable($filter[0]) && strcmp($filter[1], FilterOperators::CLOSURE) === 0) {
-                    $query->where($filter[0]);
-                }
-                // else if(Str::contains($key, '.'))
-                // {
-                //     $query->where($key, $filter[1], $filter[0]);
-                // }
-                else{
-                    $prefix = Str::contains($key, '.') ? '' : $this->model->getTable().'.';
-                    if(strcmp($filter[1], FilterOperators::IS_NULL) === 0) {
-                        $query->whereNull($prefix.$key);
-                    }
-                    else if(strcmp($filter[1], FilterOperators::IS_NOT_NULL) === 0) {
-                        $query->whereNotNull($prefix.$key);
-                    }
-                    else if(strcmp($filter[1], FilterOperators::HAS) === 0) {
-                        $query->whereHas($key, $filter[0]);
-                    }
-                    else if(strcmp($filter[1], FilterOperators::IN) === 0) {
-                        $query->whereIn($prefix.$key, explode(",", $filter[0]));
-                    }
-                    else if(strcmp($filter[1], FilterOperators::NOT_IN) === 0) {
-                        $query->whereNotIn($prefix.$key, explode(",", $filter[0]));
-                    }
-                    else {
-                        $query->where($prefix.$key, $filter[1], $filter[0]);
-                    }
-                }
-            }
-            foreach ($params->getJoins() as $joinModel => $joinFields)
-            {
-                if(count($joinFields) > 3){
-                    $query->join($joinModel, $joinFields[0], $joinFields[1], $joinFields[2], $joinFields[3]);
-                }else{
-                    $query->join($joinModel, $joinFields[0], $joinFields[1], $joinFields[2]);
-                }
-            }
-            if($params->getDistinct() != null)
-            {
-                $query->distinct($params->getDistinct());
-            }
-            if($params->getGroupBy() != null)
-            {
-                $query->groupBy($params->getGroupBy());
-            }
-            if($params->hasWith())
-            {
-                $query->with($params->getWith());
-            }
-            if($params->getTrashed())
-            {
-//                $query->with($params->getWith());
-            }
-            if ($params->isRandom()) {
-                $query->inRandomOrder();
-            }
-            else if($params->hasSort())
-            {
-                foreach ($params->getSort() as $sort)
-                {
-                    if ($sort[1] === 'raw') {
-                        $query->orderByRaw($sort[0]);
-                    }else {
-                        $query->orderBy($sort[0], $sort[1]);
-                    }
-                }
-            }
-            else
-            {
-                $query->orderByDesc($this->model->getKeyName());
-            }
-            if($params->hasWithCount())
-            {
-                $query->withCount($params->getWithCount());
-            }
-        }
-    }
-
-    public function swapPriority(int $fromId = 0, int $toId = 0) : ServiceResult
-    {
-        $result = new ServiceResult();
-        $from = $this->model->newQuery()->where('id', '=', $fromId)->select(['id', 'priority'])->first();
-        if ($from) {
-            $to = $this->model->newQuery()->where('id', '=', $toId)->select(['id', 'priority'])->first();
-            if ($to) {
-                $query = $this->model::query();
-                if ($from->priority < $to->priority) {
-                    $between = $query->select(['id', 'priority'])->where('priority', '>', $from->priority)->where('priority', '<', $to->priority)->orderBy('priority', 'asc')->get();
-                } else {
-                    $between = $query->select(['id', 'priority'])->where('priority', '<', $from->priority)->where('priority', '>', $to->priority)->orderBy('priority', 'desc')->get();
-                }
-                $swapList = [...$between, $to];
-                $temp = $swapList;
-                while (count($swapList) > 0) {
-                    $target = array_shift($swapList);
-                    $this->swapModelPriorities($from, $target);
-                }
-                return $result->status(200)->message('model priorities swap completed')
-                    ->data($from, 'from')
-                    ->appendData($to, 'to')
-                    ->appendData($between, 'between')
-                    ->appendData($temp, 'swap');
-            } else {
-                return $result->status(404)->message('to model not fount');
-            }
-        } else {
-            return $result->status(404)->message('from model not fount');
-        }
-    }
-
-    protected function swapModelPriorities($from, $to) {
-        $temp = $to->priority;
-        $to->priority = $from->priority;
-        $to->save();
-        $from->priority = $temp;
-        $from->save();
-    }
-
-    public function getMediaRules() {
-        return [];
-    }
-
-    public function linkMediaFields(array $data, Model $model) {
-        if(!isset($this->model['media'])) return;
-        /** @var MediaService $mediaService */
-        $mediaService = App::make(MediaService::class);
-        $mediaRules = $this->getMediaRules();
-        $mediaFields = array_keys($mediaRules);
-        foreach ($data as $key => $media) {
-            if(!$this->isMedia($media, $key, $mediaFields)) continue;
-            $mediaList = [];
-            if(isset($media[0])) {
-                $mediaList = $media;
-            }else {
-                $mediaList = [$media];
-            }
-            $mediaIds = [];
-            $mediaLinks = [];
-            foreach ($mediaList as $mediaItem) {
-                if (isset($mediaItem['id'])) {
-                    $mediaIds[$mediaItem['id']] = [
-                        'media_type_id' => $mediaRules[$key]['type']
-                    ];
-                    // array_push($mediaIds, $mediaItem['id']);
-                } else if (isset($mediaItem['link'])) {
-                    $mediaLinks[$mediaItem['link']] = [
-                        'media_type_id' => $mediaRules[$key]['type']
-                    ];
-                    // array_push($mediaLinks, $mediaItem['link']);
-                }
-            }
-            $mediaService->linkMedia($model, $mediaLinks);
-            $mediaService->linkMediaAndMove($model, $mediaIds);
-        }
-    }
-
-    public function isMedia($data, $key, $mediaFields) {
-        if(!is_array($data)) return false;
-        if(count($data) < 1) return false;
-        if(!in_array($key, $mediaFields)) return false;
-        return true;
-    }
-
-    public function deleteLinkedMedia(int $id = 0)
-    {
-        if(!isset($this->model['media'])) return;
-        /** @var MediaService $mediaService */
-        $mediaService = App::make(MediaService::class);
-        $mediaService->deleteLinkedMedia($id, $this->model);
-    }
-
-    public function createMedia(array $files) : ServiceResult
-    {
-        /** @var MediaService $mediaService */
-        $mediaService = App::make(MediaService::class);
-        $serviceResult = new ServiceResult($this->model->getTable());
-        $mediaRules = $this->getMediaRules();
-        foreach ($files as $key => $file)
-        {
-            $fieldKey = $key;
-            if(str_contains($key, '-')) {
-                $fieldKey = explode('-', $key)[0];
-            }
-            if(!in_array($fieldKey, array_keys($mediaRules))) continue;
-            if(isset($mediaRules[$fieldKey]['mimeType'])) {
-                $mimeTypes = [$mediaRules[$fieldKey]['mimeType']];
-                if (is_array($mediaRules[$fieldKey]['mimeType'])) {
-                    $mimeTypes = $mediaRules[$fieldKey]['mimeType'];
-                }
-                if (!in_array($file->getMimeType(), $mimeTypes)) continue;
-            }
-            $cloneId = null;
-            if (str_contains($key, '@clone')) {
-                $cloneId = intval(explode('@clone', $key)[1]);
-            }
-            if ($cloneId) {
-                $cloneMedia = TenantMedia::find($cloneId);
-                if ($cloneMedia) {
-                    $serviceResult->appendData($cloneMedia, $fieldKey);
-                }
-            } else {
-                $media = $mediaService->createMedia(
-                    $file,
-                    $mediaRules[$fieldKey]['type'],
-                    $this->model,
-                    $this->hasTenant ? Tenant::current()->id : 'base',
-                    $mediaRules[$fieldKey]['maxWidth'] ?? null,
-                    $mediaRules[$fieldKey]['maxHeight'] ?? null,
-                    $mediaRules[$fieldKey]['watermark'] ?? false,
-                    $mediaRules[$fieldKey]['optimize'] ?? false,
-                    $mediaRules[$fieldKey]['optimizeFormat'] ?? 'webp',
-                    $mediaRules[$fieldKey]['compressionRatio'] ?? 80
-                );
-                $serviceResult->appendData($media, $fieldKey);
-            }
-        }
-
-        $serviceResult->status(200)->message('Media uploaded')->data($serviceResult->getData(),
-            Str::snake(class_basename($this->model)));;
-        return $serviceResult;
-    }
-
-
-    public function deleteMedia($id = 0) : ServiceResult
-    {
-        /** @var MediaService $mediaService */
-        $mediaService = App::make(MediaService::class);
-        $serviceResult = new ServiceResult($this->model->getTable());
-        if(str_contains($id, 'x')) {
-            $fieldKey = explode('x', $id)[2];
-            $mediaRules = $this->getMediaRules();
-            if(in_array($fieldKey, array_keys($mediaRules))) {
-                $mediaType = $mediaRules[$fieldKey]['type'];
-                try {
-                    $model = $mediaService->deleteMedia($id, $mediaType, $this->model);
-                    $serviceResult->status(200)->message('Media deleted')->data($model, $this->model->getTable());
-                    return $serviceResult;
-                } catch(\Exception $e) {}
-            }
-        }
-        try {
-            $model = $mediaService->deleteMedia($id, null, $this->model);
-            $serviceResult->status(200)->message('Media deleted')->data($model, $this->model->getTable());
-        }
-        catch (\Exception $e) {}
-        $serviceResult->status(402)->message('unknown error')->error($e->getMessage(), 'service');
-        return $serviceResult;
-    }
-
-    public function createServiceResult($status, $message, $data, $queryParam = null) {
-        $serviceResult = new ServiceResult($this->model->getTable());
-        $serviceResult->status($status)->message($message);
-        if ($queryParam !== null) {
-            $serviceResult->data(($queryParam->hasColumns()) ? $data : $data->setVisible($queryParam->getColumns()), Str::snake(class_basename($this->model)));
-        } else {
-            $serviceResult->data($data, Str::snake(class_basename($this->model)));
-        }
-        return $serviceResult;
     }
 }
