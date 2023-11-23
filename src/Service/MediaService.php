@@ -189,7 +189,7 @@ class MediaService
                 File::makeDirectory($directory, 0755, true);
             }
             File::move(storage_path($media->path), storage_path($newPath));
-            $media->url = str_replace('temp', $baseModel[$baseModel->getKeyName()], $media->getOriginal('url'));
+            $media->url = str_replace('temp', $baseModel[$baseModel->getKeyName()], $media->getAttributes()['url']);
             $media->path = $newPath;
             $media->save();
         }
