@@ -391,36 +391,43 @@ class RestApiModelService implements ServiceInterface
         }
     }
 
-    public function swapPriority(int $fromId = 0, int $toId = 0) : ServiceResult
+    public function swapPriority($fromIds = 0, int $toId = 0) : ServiceResult
     {
         $result = new ServiceResult();
-        $from = $this->model->newQuery()->where('id', '=', $fromId)->select(['id', 'priority'])->first();
-        if ($from) {
-            $to = $this->model->newQuery()->where('id', '=', $toId)->select(['id', 'priority'])->first();
-            if ($to) {
-                $query = $this->model::query();
-                if ($from->priority < $to->priority) {
-                    $between = $query->select(['id', 'priority'])->where('priority', '>', $from->priority)->where('priority', '<', $to->priority)->orderBy('priority', 'asc')->get();
-                } else {
-                    $between = $query->select(['id', 'priority'])->where('priority', '<', $from->priority)->where('priority', '>', $to->priority)->orderBy('priority', 'desc')->get();
-                }
-                $swapList = [...$between, $to];
-                $temp = $swapList;
-                while (count($swapList) > 0) {
-                    $target = array_shift($swapList);
-                    $this->swapModelPriorities($from, $target);
-                }
-                return $result->status(200)->message('model priorities swap completed')
-                    ->data($from, 'from')
-                    ->appendData($to, 'to')
-                    ->appendData($between, 'between')
-                    ->appendData($temp, 'swap');
-            } else {
-                return $result->status(404)->message('to model not fount');
-            }
+        $ids = [];
+        if (!str_contains($fromIds, ",")) {
+            $ids = [$fromIds];
         } else {
-            return $result->status(404)->message('from model not fount');
+            $ids = explode(",", $fromIds);
         }
+        foreach($ids as $key => $fromId) {
+            if (empty($fromId)) continue;
+            $from = $this->model->newQuery()->where('id', '=', $fromId)->select(['id', 'priority'])->first();
+            if ($from) {
+                $to = $this->model->newQuery()->where('id', '=', $toId)->select(['id', 'priority'])->first();
+                if ($to) {
+                    $query = $this->model::query();
+                    if ($from->priority < $to->priority) {
+                        $between = $query->select(['id', 'priority'])->where('priority', '>', $from->priority)->where('priority', '<', $to->priority)->orderBy('priority', 'asc')->get();
+                    } else {
+                        $between = $query->select(['id', 'priority'])->where('priority', '<', $from->priority)->where('priority', '>', $to->priority)->orderBy('priority', 'desc')->get();
+                    }
+                    $swapList = [...$between, $to];
+                    $temp = $swapList;
+                    while (count($swapList) > 0) {
+                        $target = array_shift($swapList);
+                        $this->swapModelPriorities($from, $target);
+                    }
+                    $result->appendData($from, 'from'.$key)
+                        ->appendData($to, 'to'.$key)
+                        ->appendData($between, 'between'.$key);
+                } else {
+                    $result->appendData($from, 'from'.$key);
+                }
+            } else {
+            }
+        }
+        return $result->status(200)->message('model priorities swap completed');
     }
 
     protected function swapModelPriorities($from, $to) {
