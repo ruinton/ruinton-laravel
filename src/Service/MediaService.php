@@ -231,10 +231,14 @@ class MediaService
 
     public function deleteLinkedMedia($id, ?Model $model)
     {
+        $schema = ".";
+        if (env('DB_CONNECTION', 'mysql') == 'pgsql') {
+            $schema = ".public.";
+        }
         if($model != null)
         {
             $modelName = Str::singular($model->getTable());
-            $tableName = $model->getConnection()->getDatabaseName() .'.'.$modelName.'_media';
+            $tableName = $model->getConnection()->getDatabaseName() .$schema.$modelName.'_media';
             $media = DB::table($tableName)
                 ->where($modelName.'_id', '=', $id)
                 ->get();
