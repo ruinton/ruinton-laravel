@@ -36,11 +36,11 @@ class Media extends Model
     protected $hidden = ['media_type_id', 'mime_type_id', 'path', 'status', 'created_at', 'updated_at'];
 
     public function getUrlAttribute($value) {
-        return url($value);
+        return secure_url($value);
     }
 
     public function setUrlAttribute($value) {
-        $this->attributes['url'] = str_replace(url('/'), '', $value);
+        $this->attributes['url'] = str_replace(secure_url('/'), '', $value);
     }
 
     /**
