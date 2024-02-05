@@ -48,6 +48,8 @@ final class MimeTypes
 
     public const MODEL_GLTF             = "application/json";
 
+    public const BINARY                 = "application/octet-stream";
+
     public final static function getIndexByName(string $mimeName)
     {
         $mimeClass = new \ReflectionClass(MimeTypes::class);
