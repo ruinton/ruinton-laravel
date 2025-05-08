@@ -189,7 +189,7 @@ class MediaService
                 File::makeDirectory($directory, 0755, true);
             }
             File::move(storage_path($media->path), storage_path($newPath));
-            $media->url = str_replace('temp', $baseModel[$baseModel->getKeyName()], $media->url);
+            $media->url = str_replace('temp', $baseModel[$baseModel->getKeyName()], $media->getOriginal('url'));
             $media->path = $newPath;
             $media->save();
         }
@@ -208,20 +208,16 @@ class MediaService
     {
         if($model != null)
         {
-            $schema = ".";
-            if (env('DB_CONNECTION', 'mysql') == 'pgsql') {
-                $schema = ".public.";
-            }
             if (str_contains($id, 'x')) {
                 $ids = explode('x', $id);
-                $tableName = $model->getConnection()->getDatabaseName() .$schema.Str::singular($model->getTable()).'_media';
+                $tableName = $model->getConnection()->getDatabaseName() .'.'.Str::singular($model->getTable()).'_media';
                 DB::table($tableName)
                     ->where('media_id', '=', intval($ids[0]))
                     ->where(Str::singular($model->getTable()).'_id', '=', intval($ids[1]))
                     ->where('media_type_id', '=', $mediaType)
                     ->delete();
             }else {
-                $tableName = $model->getConnection()->getDatabaseName() .$schema.Str::singular($model->getTable()).'_media';
+                $tableName = $model->getConnection()->getDatabaseName() .'.'.Str::singular($model->getTable()).'_media';
                 DB::table($tableName)
                     ->where('media_id', '=', intval($id))
                     ->delete();
@@ -231,19 +227,15 @@ class MediaService
 
     public function deleteLinkedMedia($id, ?Model $model)
     {
-        $schema = ".";
-        if (env('DB_CONNECTION', 'mysql') == 'pgsql') {
-            $schema = ".public.";
-        }
         if($model != null)
         {
             $modelName = Str::singular($model->getTable());
-            $tableName = $model->getConnection()->getDatabaseName() .$schema.$modelName.'_media';
+            $tableName = $model->getConnection()->getDatabaseName() .'.'.$modelName.'_media';
             $media = DB::table($tableName)
                 ->where($modelName.'_id', '=', $id)
                 ->get();
             foreach ($media as $m) {
-                $this->deleteMedia($m->media_id, $model);
+                $this->deleteMedia($m->media_id, $m->media_type_id, $model);
             }
         }
     }
